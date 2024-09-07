@@ -70,8 +70,8 @@
     [remainingEmojiLines removeAllObjects];
     
     while (inputStream.hasBytesAvailable && emojiLines.count < len) @autoreleasepool {
-        uint8_t bytes[1024];
-        NSInteger readSize = [inputStream read:bytes maxLength:1024];
+        uint8_t bytes[128];
+        NSInteger readSize = [inputStream read:bytes maxLength:128];
         
         NSString *string;
         if (readSize <= 0) {
@@ -82,21 +82,36 @@
             _unprocessesBytesCount = 0;
         } else {
             NSInteger lastNewlineIndex = NSNotFound;
-            for (NSInteger idx = readSize - 1; idx > 0; idx--) {
+            for (NSInteger idx = readSize - 1; idx >= 0; idx--) {
                 if (bytes[idx] == '\n') {
                     lastNewlineIndex = idx;
                     break;
                 }
             }
             
+            if (lastNewlineIndex == 0) {
+                abort();
+            }
+            
             if (lastNewlineIndex == NSNotFound) {
+                // \n이 없으면
+                // - 일단 _unprocessedBytes로 넘기고 continue 해야함. line 하나가 너무 길면 잘리며 char 배열이 잘려서 원치 않는 결과가 나옴
+                // - readSize가 예상보다 작으면 그 문자열을 바로 string으로 해야함 (이전 _unprocessedBytes과 합쳐서)
+                if (readSize < 128) {
+                    //TODO
+                }
+                
+                // Old
                 if (_unprocessedBytes == NULL) {
                     string = [[NSString alloc] initWithBytes:bytes length:readSize encoding:NSUTF8StringEncoding];
+                    assert(string != nil);
                 } else {
                     uint8_t *newBytes = (uint8_t *)malloc((_unprocessesBytesCount + readSize) * sizeof(uint8_t));
                     memcpy(newBytes, _unprocessedBytes, _unprocessesBytesCount * sizeof(uint8_t));
                     memcpy(newBytes + _unprocessesBytesCount, bytes, readSize * sizeof(uint8_t));
                     string = [[NSString alloc] initWithBytes:newBytes length:_unprocessesBytesCount + readSize encoding:NSUTF8StringEncoding];
+                    NSLog(@"%ld", lastNewlineIndex);
+                    assert(string != nil);
                     free(newBytes);
                     
                     free(_unprocessedBytes);
@@ -106,22 +121,24 @@
             } else {
                 if (_unprocessedBytes == NULL) {
                     string = [[NSString alloc] initWithBytes:bytes length:lastNewlineIndex encoding:NSUTF8StringEncoding];
+                    assert(string != nil);
                 } else {
                     uint8_t *newBytes = (uint8_t *)malloc((_unprocessesBytesCount + lastNewlineIndex) * sizeof(uint8_t));
                     memcpy(newBytes, _unprocessedBytes, _unprocessesBytesCount * sizeof(uint8_t));
                     free(_unprocessedBytes);
                     memcpy(newBytes + _unprocessesBytesCount, bytes, lastNewlineIndex * sizeof(uint8_t));
                     string = [[NSString alloc] initWithBytes:newBytes length:_unprocessesBytesCount + lastNewlineIndex encoding:NSUTF8StringEncoding];
+                    assert(string != nil);
                     free(newBytes);
                 }
                 
+                // - 1 및 + 1은 발견한 \n을 제외한다.
                 _unprocessedBytes = (uint8_t *)malloc((readSize - lastNewlineIndex - 1) * sizeof(uint8_t));
                 memcpy(_unprocessedBytes, bytes + lastNewlineIndex + 1, (readSize - lastNewlineIndex - 1) * sizeof(uint8_t));
                 _unprocessesBytesCount = readSize - lastNewlineIndex - 1;
             }
         }
         
-        assert(string != nil);
         NSArray<NSString *> *components = [string componentsSeparatedByString:@"\n"];
         [string release];
         
