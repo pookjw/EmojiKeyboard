@@ -1,13 +1,13 @@
 //
-//  ESEmojiTokenEnumerator.m
+//  ESTextLineEnumerator.m
 //  EmojiScript
 //
 //  Created by Jinwoo Kim on 9/7/24.
 //
 
-#import "ESEmojiTokenEnumerator.h"
+#import "ESTextLineEnumerator.h"
 
-@interface ESEmojiTokenEnumerator () <NSStreamDelegate> {
+@interface ESTextLineEnumerator () <NSStreamDelegate> {
     NSInputStream *_inputStream;
     NSMutableArray<NSString *> *_remainingEmojiLines;
     uint8_t *_unprocessedBytes;
@@ -15,7 +15,7 @@
 }
 @end
 
-@implementation ESEmojiTokenEnumerator
+@implementation ESTextLineEnumerator
 
 - (instancetype)initWithURL:(NSURL *)URL {
     if (self = [super init]) {
