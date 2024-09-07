@@ -96,7 +96,7 @@
             if (lastNewlineIndex == NSNotFound) {
                 // \n이 없으면
                 // - 일단 _unprocessedBytes로 넘기고 continue 해야함. line 하나가 너무 길면 잘리며 char 배열이 잘려서 원치 않는 결과가 나옴 (기존에 _unprocessedBytes이 이미 있다면 합쳐야함)
-                // - readSize가 예상보다 작으면 그 문자열을 바로 string으로 해야함 (이전 _unprocessedBytes과 합쳐서)
+                // - readSize가 예상보다 작으면 그 문자열을 바로 string으로 해야함 (이전 _unprocessedBytes과 합쳐서). 마지막 loop일 것.
                 if (readSize < 1024) {
                     //TODO
                 } else {
