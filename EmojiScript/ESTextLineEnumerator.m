@@ -152,6 +152,7 @@
     [emojiLines release];
     
     if (emojiLinesCount < len) {
+        [inputStream close];
         return emojiLinesCount;
     }
     
