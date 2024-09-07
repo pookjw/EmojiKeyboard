@@ -21,8 +21,8 @@ int main(int argc, const char * argv[]) {
         
         ESTextLineEnumerator *enumerator = [[ESTextLineEnumerator alloc] initWithURL:emojiSequencesURL];
         
-        for (id foo in enumerator) {
-            NSLog(@"%@", foo);
+        for (NSString *line in enumerator) {
+            NSLog(@"%@", line);
         }
         
         return EXIT_SUCCESS;
