@@ -7,22 +7,22 @@
 
 #import <CoreData/CoreData.h>
 #import "ESArgumentParser.h"
-#import "ESEmojiTextFileEnumerator.h"
+#import "ESEmojiTokenEnumerator.h"
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         NSURL * _Nullable emojiSequencesURL = [ESArgumentParser emojiSequencesURL];
-        NSURL * _Nullable emojiZwjSequencesURL = [ESArgumentParser emojiZwjSequencesURL];
+        NSURL * _Nullable emojiZWJSequencesURL = [ESArgumentParser emojiZWJSequencesURL];
         
-        if (emojiSequencesURL == nil || emojiZwjSequencesURL == nil) {
+        if (emojiSequencesURL == nil || emojiSequencesURL == nil) {
             NSLog(@"%@", ESArgumentParser.helpMessage);
             return EXIT_FAILURE;
         }
         
-        ESEmojiTextFileEnumerator *enumerator = [[ESEmojiTextFileEnumerator alloc] initWithURL:emojiSequencesURL];
+        ESEmojiTokenEnumerator *enumerator = [[ESEmojiTokenEnumerator alloc] initWithURL:emojiSequencesURL];
         
         for (id foo in enumerator) {
-            
+            NSLog(@"%@", foo);
         }
         
         return EXIT_SUCCESS;

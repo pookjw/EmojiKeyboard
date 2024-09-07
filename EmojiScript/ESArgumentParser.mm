@@ -13,7 +13,7 @@
     return [ESArgumentParser URLForFlag:@"--sequences-txt" nilIfDoesNotExist:YES];
 }
 
-+ (NSURL *)emojiZwjSequencesURL {
++ (NSURL *)emojiZWJSequencesURL {
     return [ESArgumentParser URLForFlag:@"--zwj-sequences-txt" nilIfDoesNotExist:YES];
 }
 
