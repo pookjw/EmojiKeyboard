@@ -23,6 +23,7 @@ typedef NS_ENUM(NSUInteger, ESEmojiTokenType) {
 @property (assign, nonatomic, readonly) std::vector<UChar> unichars;
 @property (assign, nonatomic, readonly) ESEmojiTokenType emojiType;
 @property (nonatomic, readonly) NSString *string;
++ (NSArray<ESEmojiToken *> *)emojiTokensFromURL:(NSURL *)URL;
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)init NS_UNAVAILABLE;
 @end

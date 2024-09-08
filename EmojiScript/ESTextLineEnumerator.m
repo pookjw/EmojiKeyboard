@@ -7,7 +7,7 @@
 
 #import "ESTextLineEnumerator.h"
 
-@interface ESTextLineEnumerator () {
+@interface ESTextLineEnumerator () <NSStreamDelegate> {
     NSInputStream *_inputStream;
     NSMutableArray<NSString *> *_remainingEmojiLines;
     uint8_t *_unprocessedBytes;
@@ -19,7 +19,10 @@
 
 - (instancetype)initWithURL:(NSURL *)URL {
     if (self = [super init]) {
-        _inputStream = [[NSInputStream alloc] initWithURL:URL];
+        NSInputStream *inputStream = [[NSInputStream alloc] initWithURL:URL];
+        inputStream.delegate = self;
+        
+        _inputStream = inputStream;
         _remainingEmojiLines = [NSMutableArray new];
     }
     
@@ -87,11 +90,6 @@
                     lastNewlineIndex = idx;
                     break;
                 }
-            }
-            
-            if (lastNewlineIndex == 0) {
-                // TODO
-                abort();
             }
             
             if (lastNewlineIndex == NSNotFound) {
@@ -181,6 +179,10 @@
     }
     
     return len;
+}
+
+- (void)stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode {
+    
 }
 
 @end

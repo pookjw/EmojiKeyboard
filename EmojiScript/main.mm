@@ -7,7 +7,7 @@
 
 #import <CoreData/CoreData.h>
 #import "ESArgumentParser.h"
-#import "ESTextLineEnumerator.h"
+#import "ESEmojiToken.h"
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
@@ -19,11 +19,7 @@ int main(int argc, const char * argv[]) {
             return EXIT_FAILURE;
         }
         
-        ESTextLineEnumerator *enumerator = [[ESTextLineEnumerator alloc] initWithURL:emojiSequencesURL];
-        
-        for (NSString *line in enumerator) {
-            NSLog(@"%@", line);
-        }
+        NSLog(@"%@", [ESEmojiToken emojiTokensFromURL:emojiSequencesURL]);
         
         return EXIT_SUCCESS;
     }

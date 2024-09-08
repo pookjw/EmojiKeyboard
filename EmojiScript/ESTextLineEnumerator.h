@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface ESTextLineEnumerator : NSEnumerator
+@interface ESTextLineEnumerator : NSObject <NSFastEnumeration> /*NSEnumerator*/
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithURL:(NSURL *)URL;
