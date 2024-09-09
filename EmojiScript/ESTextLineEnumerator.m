@@ -17,6 +17,9 @@
     NSMutableArray<NSString *> *_remainingEmojiLines;
     uint8_t *_unprocessedBytes;
     size_t _unprocessesBytesCount;
+#if USE_STACK_POINTER
+    BOOL _unprocessedBytesStack;
+#endif
 }
 @end
 
@@ -39,9 +42,15 @@
     [_inputStream release];
     [_remainingEmojiLines release];
     
+#if USE_STACK_POINTER
+    if (_unprocessedBytes != NULL && !_unprocessedBytesStack) {
+        free(_unprocessedBytes);
+    }
+#else
     if (_unprocessedBytes != NULL) {
         free(_unprocessedBytes);
     }
+#endif
     
     [super dealloc];
 }
@@ -80,16 +89,27 @@
     while (inputStream.hasBytesAvailable && emojiLines.count < len) @autoreleasepool {
         NSAutoreleasePool *pool = [NSAutoreleasePool new];
         
-        uint8_t bytes[128];
-        NSInteger readSize = [inputStream read:bytes maxLength:128];
+        uint8_t bytes[1024];
+        NSInteger readSize = [inputStream read:bytes maxLength:1024];
         
         NSString *string;
         if (readSize <= 0) {
             assert(_unprocessedBytes != NULL);
             string = [[NSString alloc] initWithBytes:_unprocessedBytes length:_unprocessesBytesCount encoding:NSUTF8StringEncoding];
+            
+#if USE_STACK_POINTER
+            if (!_unprocessedBytesStack) {
+                free(_unprocessedBytes);
+            }
+#else
             free(_unprocessedBytes);
+#endif
+            
             _unprocessedBytes = NULL;
             _unprocessesBytesCount = 0;
+#if USE_STACK_POINTER
+            _unprocessedBytesStack = NO;
+#endif
         } else {
             NSInteger lastNewlineIndex = NSNotFound;
             for (NSInteger idx = readSize - 1; idx >= 0; idx--) {
@@ -120,11 +140,22 @@
                         
 #if !USE_STACK_POINTER
                         free(newBytes);
+#endif
+                        
+#if USE_STACK_POINTER
+                        if (!_unprocessedBytesStack) {
+                            free(_unprocessedBytes);
+                        }
+#else
                         free(_unprocessedBytes);
 #endif
                         
                         _unprocessedBytes = NULL;
                         _unprocessesBytesCount = 0;
+                        
+#if USE_STACK_POINTER
+                        _unprocessedBytesStack = NO;
+#endif
                     }
                 } else {
 #if USE_STACK_POINTER
@@ -135,11 +166,19 @@
                     memcpy(newBytes, _unprocessedBytes, _unprocessesBytesCount * sizeof(uint8_t));
                     memcpy(newBytes + _unprocessesBytesCount, bytes, readSize * sizeof(uint8_t));
                     
-#if !USE_STACK_POINTER
+#if USE_STACK_POINTER
+                    if (!_unprocessedBytesStack) {
+                        free(_unprocessedBytes);
+                    }
+#else
                     free(_unprocessedBytes);
 #endif
+                    
                     _unprocessedBytes = newBytes;
                     _unprocessesBytesCount = _unprocessesBytesCount + readSize;
+#if USE_STACK_POINTER
+                    _unprocessedBytesStack = YES;
+#endif
                     continue;
                 }
             } else {
@@ -153,9 +192,15 @@
                     uint8_t *newBytes = (uint8_t *)malloc((_unprocessesBytesCount + lastNewlineIndex) * sizeof(uint8_t));
 #endif
                     memcpy(newBytes, _unprocessedBytes, _unprocessesBytesCount * sizeof(uint8_t));
-#if !USE_STACK_POINTER
+                    
+#if USE_STACK_POINTER
+                    if (!_unprocessedBytesStack) {
+                        free(_unprocessedBytes);
+                    }
+#else
                     free(_unprocessedBytes);
 #endif
+                    
                     memcpy(newBytes + _unprocessesBytesCount, bytes, lastNewlineIndex * sizeof(uint8_t));
                     string = [[NSString alloc] initWithBytes:newBytes length:_unprocessesBytesCount + lastNewlineIndex encoding:NSUTF8StringEncoding];
                     assert(string != nil);
@@ -165,9 +210,18 @@
                 }
                 
                 // - 1 및 + 1은 발견한 \n을 제외한다.
+                
+#if USE_STACK_POINTER
+                _unprocessedBytes = (uint8_t *)alloca((readSize - lastNewlineIndex - 1) * sizeof(uint8_t));
+#else
                 _unprocessedBytes = (uint8_t *)malloc((readSize - lastNewlineIndex - 1) * sizeof(uint8_t));
+#endif
                 memcpy(_unprocessedBytes, bytes + lastNewlineIndex + 1, (readSize - lastNewlineIndex - 1) * sizeof(uint8_t));
                 _unprocessesBytesCount = readSize - lastNewlineIndex - 1;
+                
+#if USE_STACK_POINTER
+                _unprocessedBytesStack = YES;
+#endif
             }
         }
         
@@ -190,6 +244,15 @@
         [mutableComponents release];
         [pool release];
     }
+    
+#if USE_STACK_POINTER
+    if (_unprocessedBytesStack) {
+        void *newHeapBytes = malloc(sizeof(uint8_t) * _unprocessesBytesCount);
+        memcpy(newHeapBytes, _unprocessedBytes, sizeof(uint8_t) * _unprocessesBytesCount);
+        _unprocessedBytes = newHeapBytes;
+        _unprocessedBytesStack = NO;
+    }
+#endif
     
     //
     
