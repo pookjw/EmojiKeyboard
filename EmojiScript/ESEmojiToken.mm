@@ -58,7 +58,7 @@ namespace std {
             size_t result = 0;
             
             for (size_t i = 0; i < size; i++) {
-                result ^= hasher(vec.at(i));
+                result ^= (hasher(vec.at(i)) << i);
             }
             
             return result;
@@ -259,10 +259,18 @@ namespace std {
 }
 
 - (NSUInteger)hash {
+    __block NSUInteger hash = 0;
+    
+    hash ^= _emojiType;
+    
+    [_strings enumerateObjectsUsingBlock:^(NSString * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        hash ^= (obj.hash << (idx + 1));
+    }];
+    
     size_t unicodesash = std::hash<std::vector<UChar32>>()(_unicodes);
-//    return static_cast<NSUInteger>(unicodesash) ^ _emojiType;
-    NSLog(@"%ld", _strings.hash);
-    return _strings.hash;
+    hash ^= static_cast<NSUInteger>(unicodesash);
+    
+    return hash;
 }
 
 - (id)copyWithZone:(struct _NSZone *)zone {
