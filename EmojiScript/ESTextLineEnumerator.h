@@ -13,9 +13,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-#if USE_STACK_POINTER
-NS_SWIFT_UNAVAILABLE_FROM_ASYNC("Unavaiable when USE_STACK_POINTER.")
-#endif
+// alloca에 있던 bytes는 malloc으로 이동하기 때문에 상관 없음
+//#if USE_STACK_POINTER
+//NS_SWIFT_UNAVAILABLE_FROM_ASYNC("Unavaiable when USE_STACK_POINTER.")
+//#endif
 @interface ESTextLineEnumerator : NSObject <NSFastEnumeration> /*NSEnumerator*/
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)init NS_UNAVAILABLE;
