@@ -6,7 +6,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <unicode/utf8.h>
+#import <unicode/utf16.h>
 #include <vector>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -15,14 +15,18 @@ typedef NS_ENUM(NSUInteger, ESEmojiTokenType) {
     ESEmojiTokenBasic,
     ESEmojiTokenKeycapSequence,
     ESEmojiTokenFlagSequence,
+    ESEmojiTokenTagSequence,
     ESEmojiTokenModifierSequence,
     ESEmojiTokenZMJSequence
 };
 
+extern NSString * NSStringFromESEmojiTokenType(ESEmojiTokenType emojiType);
+extern ESEmojiTokenType ESEmojiTokenTypeFromNSString(NSString *string);
+
 @interface ESEmojiToken : NSObject
-@property (assign, nonatomic, readonly) std::vector<UChar> unichars;
+@property (assign, nonatomic, readonly) std::vector<UChar32> unicodes;
 @property (assign, nonatomic, readonly) ESEmojiTokenType emojiType;
-@property (nonatomic, readonly) NSString *string;
+@property (copy, nonatomic, readonly) NSArray<NSString *> *strings;
 + (NSArray<ESEmojiToken *> *)emojiTokensFromURL:(NSURL *)URL;
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)init NS_UNAVAILABLE;

@@ -9,6 +9,7 @@
 #import "ESArgumentParser.h"
 #import "ESEmojiToken.h"
 
+// TODO: malloc 대신 stp
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         NSURL * _Nullable emojiSequencesURL = [ESArgumentParser emojiSequencesURL];
@@ -19,7 +20,9 @@ int main(int argc, const char * argv[]) {
             return EXIT_FAILURE;
         }
         
-        NSLog(@"%@", [ESEmojiToken emojiTokensFromURL:emojiSequencesURL]);
+        for (ESEmojiToken *token in [ESEmojiToken emojiTokensFromURL:emojiZWJSequencesURL]){
+            NSLog(@"%@", token.description);
+        }
         
         return EXIT_SUCCESS;
     }

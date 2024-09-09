@@ -9,6 +9,45 @@
 #import "ESTextLineEnumerator.h"
 #include <utility>
 #include <ranges>
+#include <algorithm>
+#include <vector>
+
+NSString * NSStringFromESEmojiTokenType(ESEmojiTokenType emojiType) {
+    switch (emojiType) {
+        case ESEmojiTokenBasic:
+            return @"Basic_Emoji";
+        case ESEmojiTokenKeycapSequence:
+            return @"Emoji_Keycap_Sequence";
+        case ESEmojiTokenFlagSequence:
+            return @"RGI_Emoji_Flag_Sequence";
+        case ESEmojiTokenTagSequence:
+            return @"RGI_Emoji_Tag_Sequence";
+        case ESEmojiTokenModifierSequence:
+            return @"RGI_Emoji_Modifier_Sequence";
+        case ESEmojiTokenZMJSequence:
+            return @"RGI_Emoji_ZWJ_Sequence";
+        default:
+            return nil;
+    }
+}
+
+ESEmojiTokenType ESEmojiTokenTypeFromNSString(NSString *string) {
+    if ([string isEqualToString:@"Basic_Emoji"]) {
+        return ESEmojiTokenBasic;
+    } else if ([string isEqualToString:@"Emoji_Keycap_Sequence"]) {
+        return ESEmojiTokenKeycapSequence;
+    } else if ([string isEqualToString:@"RGI_Emoji_Flag_Sequence"]) {
+        return ESEmojiTokenFlagSequence;
+    } else if ([string isEqualToString:@"RGI_Emoji_Tag_Sequence"]) {
+        return ESEmojiTokenTagSequence;
+    } else if ([string isEqualToString:@"RGI_Emoji_Modifier_Sequence"]) {
+        return ESEmojiTokenModifierSequence;
+    } else if ([string isEqualToString:@"RGI_Emoji_ZWJ_Sequence"]) {
+        return ESEmojiTokenZMJSequence;
+    } else {
+        abort();
+    }
+}
 
 namespace std {
     template<typename T>
@@ -35,7 +74,7 @@ namespace std {
     NSMutableArray<ESEmojiToken *> *emojiTokens = [NSMutableArray new];
     
     for (NSString *textLine in enumerator) {
-        ESEmojiToken * _Nullable emojiToken = [ESEmojiToken emojiTokenFromTextLine:textLine];
+        ESEmojiToken * _Nullable emojiToken = [ESEmojiToken _emojiTokenFromTextLine:textLine];
         if (emojiToken == nil) continue;
         
         [emojiTokens addObject:emojiToken];
@@ -44,7 +83,7 @@ namespace std {
     return [emojiTokens autorelease];
 }
 
-+ (ESEmojiToken * _Nullable)emojiTokenFromTextLine:(NSString *)textLine {
++ (ESEmojiToken * _Nullable)_emojiTokenFromTextLine:(NSString *)textLine {
     if ([[textLine stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet] hasPrefix:@"#"]) return nil;
     
     NSArray<NSString *> *components = [textLine componentsSeparatedByString:@";"];
@@ -52,58 +91,147 @@ namespace std {
     
     //
     
-    NSString *unicharsRangeString = [components[0] stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
-    std::vector<unichar> unichars;
-    
-    if (unicharsRangeString.length == 10) {
-        NSArray<NSString *> *unicharsRangeComponents = [unicharsRangeString componentsSeparatedByString:@".."];
-        if (unicharsRangeComponents.count != 2) return nil;
-        
-        NSScanner *startScanner = [NSScanner scannerWithString:unicharsRangeComponents[0]];
-        unsigned long long startCode;
-        if (![startScanner scanHexLongLong:&startCode]) return nil;
-        
-        NSScanner *endScanner = [NSScanner scannerWithString:unicharsRangeComponents[1]];
-        unsigned long long endCode;
-        if (![endScanner scanHexLongLong:&endCode]) return nil;
-        
-        unichars = std::ranges::iota_view {startCode, endCode + 1} | std::ranges::to<std::vector<UChar>>();
-    } else if (unicharsRangeString.length == 4) {
-        NSScanner *scanner = [NSScanner scannerWithString:unicharsRangeString];
-        unsigned long long code;
-        if (![scanner scanHexLongLong:&code]) return nil;
-        
-        unichars = {static_cast<UChar>(code)};
-    } else {
-        return nil;
-    }
+    NSString *unicharsRangeString = components[0];
+    std::vector<UChar32> unicodes;
+    NSArray<NSString *> *strings = [ESEmojiToken _stringsFromTextString:unicharsRangeString unicodesOut:&unicodes];
     
     //
     
     NSString *emojiTypeString = [components[1] stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
+    ESEmojiTokenType emojiType = ESEmojiTokenTypeFromNSString(emojiTypeString);
     
-    ESEmojiTokenType emojiType;
-    if ([emojiTypeString isEqualToString:@"Basic_Emoji"]) {
-        emojiType = ESEmojiTokenBasic;
-    } else if ([emojiTypeString isEqualToString:@"Emoji_Keycap_Sequence"]) {
-        emojiType = ESEmojiTokenKeycapSequence;
-    } else if ([emojiTypeString isEqualToString:@"RGI_Emoji_Flag_Sequence"]) {
-        emojiType = ESEmojiTokenFlagSequence;
-    } else if ([emojiTypeString isEqualToString:<#(nonnull NSString *)#>])
-    abort();
+    return [[[ESEmojiToken alloc] initWithUnicodes:unicodes emojiType:emojiType strings:strings] autorelease];
 }
 
-- (instancetype)initWithUnichars:(std::vector<UChar>)unichars emojiType:(ESEmojiTokenType)emojiType {
++ (NSArray<NSString *> *)_stringsFromTextString:(NSString *)string unicodesOut:(std::vector<UChar32> *)unicodesOut {
+    assert(string.length > 0);
+    assert(sizeof(unsigned) == sizeof(UChar32));
+    
+    NSString *trimmed = nil;
+    for (NSInteger idx = string.length - 1; idx >= 0; idx--) {
+        if ([string characterAtIndex:idx] != 0x20) {
+            trimmed = [string substringToIndex:idx + 1];
+            break;
+        }
+    }
+    
+    if (trimmed == nil) trimmed = string;
+    
+    //
+    
+    if ([trimmed containsString:@".."]) {
+        // 2795..2797 또는 1F232..1F236
+        NSArray<NSString *> *components = [trimmed componentsSeparatedByString:@".."];
+        assert(components.count == 2);
+        
+        NSScanner *startCodeScanner = [NSScanner scannerWithString:components[0]];
+        UChar32 startCode;
+        assert([startCodeScanner scanHexInt:reinterpret_cast<unsigned *>(&startCode)]);
+        
+        NSScanner *endCodeScanner = [NSScanner scannerWithString:components[1]];
+        UChar32 endCode;
+        assert([endCodeScanner scanHexInt:reinterpret_cast<unsigned *>(&endCode)]);
+        
+        auto unicodes = std::ranges::iota_view(startCode, endCode + 1) | std::ranges::to<std::vector<UChar32>>();
+        if (unicodesOut != nullptr) {
+            *unicodesOut = unicodes;
+        }
+        
+        auto stringsVec = unicodes
+        | std::views::transform([](UChar32 unicode) {
+            return [ESEmojiToken _stringFromUnicodes:{unicode}];
+        }) | std::ranges::to<std::vector<NSString *>>();
+        
+        return [[[NSArray alloc] initWithObjects:stringsVec.data() count:stringsVec.size()] autorelease];
+    } else if ([trimmed containsString:@" "]) {
+        // 2696 FE0F 또는 1F321 FE0F
+        NSArray<NSString *> *components = [trimmed componentsSeparatedByString:@" "];
+        
+        std::vector<UChar32> unicodes {};
+        unicodes.reserve(components.count);
+        for (NSString *component in components) {
+            NSScanner *scanner = [NSScanner scannerWithString:component];
+            UChar32 unicode;
+            assert([scanner scanHexInt:reinterpret_cast<unsigned *>(&unicode)]);
+            unicodes.push_back(unicode);
+        }
+        
+        if (unicodesOut != nullptr) {
+            *unicodesOut = unicodes;
+        }
+        
+        return @[[ESEmojiToken _stringFromUnicodes:unicodes]];
+    } else {
+        // 2728 또는 1F7F0
+        NSScanner *scanner = [NSScanner scannerWithString:trimmed];
+        UChar32 unicode;
+        assert([scanner scanHexInt:reinterpret_cast<unsigned *>(&unicode)]);
+        
+        if (unicodesOut != nullptr) {
+            *unicodesOut = {unicode};
+        }
+        
+        return @[[ESEmojiToken _stringFromUnicodes:{unicode}]];
+    }
+}
+
++ (NSString *)_stringFromUnicodes:(std::vector<UChar32>)unicodes {
+    std::vector<unsigned char> chars {};
+    
+    //
+    
+    std::for_each(unicodes.cbegin(), unicodes.cend(), [&chars](UChar32 unicode) {
+        // https://github.com/facebook/folly/blob/main/folly/Unicode.cpp
+        // https://stackoverflow.com/a/6240184/17473716
+        if (unicode < 0x7F) {
+            chars.push_back(static_cast<unsigned char>(unicode));
+        } else if (unicode <= 0x7FF) {
+            chars.reserve(2);
+            chars.push_back(static_cast<unsigned char>(0xC0 | (unicode >> 6)));
+            chars.push_back(static_cast<unsigned char>(0x80 | (0x3f & unicode)));
+        } else if (unicode <= 0xFFFF) {
+            chars.reserve(3);
+            chars.push_back(static_cast<unsigned char>(0xE0 | (unicode >> 12)));
+            chars.push_back(static_cast<unsigned char>(0x80 | (0x3f & (unicode >> 6))));
+            chars.push_back(static_cast<unsigned char>(0x80 | (0x3f & unicode)));
+        } else if (unicode <= 0x10FFFF) {
+            chars.reserve(4);
+            chars.push_back(static_cast<unsigned char>(0xF0 | (unicode >> 18)));
+            chars.push_back(static_cast<unsigned char>(0x80 | (0x3f & (unicode >> 12))));
+            chars.push_back(static_cast<unsigned char>(0x80 | (0x3f & (unicode >> 6))));
+            chars.push_back(static_cast<unsigned char>(0x80 | (0x3f & unicode)));
+        }
+    });
+    
+    //
+    
+    return [[[NSString alloc] initWithBytes:chars.data() length:chars.size() encoding:NSUTF8StringEncoding] autorelease];
+}
+
+- (instancetype)initWithUnicodes:(std::vector<UChar32>)unicodes emojiType:(ESEmojiTokenType)emojiType strings:(NSArray<NSString *> *)strings {
     if (self = [super init]) {
-        _unichars = unichars;
+        _unicodes = unicodes;
         _emojiType = emojiType;
+        _strings = [strings copy];
     }
     
     return self;
 }
 
-- (instancetype)initWithString:(NSString *)string {
-    abort();
+- (void)dealloc {
+    [_strings release];
+    [super dealloc];
+}
+
+- (NSString *)description {
+    NSMutableString *strings = [NSMutableString new];
+    for (NSString *string in _strings) {
+        [strings appendString:string];
+    }
+    
+    NSString *result = [NSString stringWithFormat:@"%@(strings: %@)", [super description], strings];
+    [strings release];
+    return result;
 }
 
 - (BOOL)isEqual:(id)other {
@@ -111,17 +239,13 @@ namespace std {
         return YES;
     } else {
         auto casted = static_cast<ESEmojiToken *>(other);
-        return _unichars == casted->_unichars && _emojiType == casted->_emojiType;
+        return _unicodes == casted->_unicodes && _emojiType == casted->_emojiType;
     }
 }
 
 - (NSUInteger)hash {
-    size_t unicharsHash = std::hash<std::vector<UChar>>()(_unichars);
-    return static_cast<NSUInteger>(unicharsHash) ^ _emojiType;
-}
-
-- (NSString *)string {
-    abort();
+    size_t unicodesash = std::hash<std::vector<UChar32>>()(_unicodes);
+    return static_cast<NSUInteger>(unicodesash) ^ _emojiType;
 }
 
 @end
