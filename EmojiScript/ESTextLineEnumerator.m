@@ -5,8 +5,6 @@
 //  Created by Jinwoo Kim on 9/7/24.
 //
 
-#define USE_STACK_POINTER 1
-
 #import "ESTextLineEnumerator.h"
 #if USE_STACK_POINTER
 #include <alloca.h>

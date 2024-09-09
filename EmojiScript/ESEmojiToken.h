@@ -28,6 +28,7 @@ extern ESEmojiTokenType ESEmojiTokenTypeFromNSString(NSString *string);
 @property (assign, nonatomic, readonly) ESEmojiTokenType emojiType;
 @property (copy, nonatomic, readonly) NSArray<NSString *> *strings;
 + (NSArray<ESEmojiToken *> *)emojiTokensFromURL:(NSURL *)URL;
++ (NSDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> *)emojiTokenReferencesFromEmojiTokens:(NSArray<ESEmojiToken *> *)emojiTokens;
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)init NS_UNAVAILABLE;
 @end

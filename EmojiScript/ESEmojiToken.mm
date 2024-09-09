@@ -210,6 +210,14 @@ namespace std {
     return [[[NSString alloc] initWithBytes:chars.data() length:chars.size() encoding:NSUTF8StringEncoding] autorelease];
 }
 
++ (NSDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> *)emojiTokenReferencesFromEmojiTokens:(NSArray<ESEmojiToken *> *)emojiTokens {
+    NSMutableDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> * result = [NSMutableDictionary new];
+    
+    abort();
+    
+    return [result autorelease];
+}
+
 - (instancetype)initWithUnicodes:(std::vector<UChar32>)unicodes emojiType:(ESEmojiTokenType)emojiType strings:(NSArray<NSString *> *)strings {
     if (self = [super init]) {
         _unicodes = unicodes;
