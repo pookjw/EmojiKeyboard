@@ -23,7 +23,7 @@ typedef NS_ENUM(NSUInteger, ESEmojiTokenType) {
 extern NSString * NSStringFromESEmojiTokenType(ESEmojiTokenType emojiType);
 extern ESEmojiTokenType ESEmojiTokenTypeFromNSString(NSString *string);
 
-@interface ESEmojiToken : NSObject
+@interface ESEmojiToken : NSObject <NSCopying>
 @property (assign, nonatomic, readonly) std::vector<UChar32> unicodes;
 @property (assign, nonatomic, readonly) ESEmojiTokenType emojiType;
 @property (copy, nonatomic, readonly) NSArray<NSString *> *strings;

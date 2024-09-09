@@ -19,9 +19,22 @@ int main(int argc, const char * argv[]) {
             return EXIT_FAILURE;
         }
         
+        NSMutableSet<NSNumber *> *hashes = [NSMutableSet new];
+        NSUInteger count = 0;
+        
+        for (ESEmojiToken *token in [ESEmojiToken emojiTokensFromURL:emojiSequencesURL]){
+            NSLog(@"%@", token.description);
+            [hashes addObject:@(token.hash)];
+            count += 1;
+        }
+        
         for (ESEmojiToken *token in [ESEmojiToken emojiTokensFromURL:emojiZWJSequencesURL]){
             NSLog(@"%@", token.description);
+            [hashes addObject:@(token.hash)];
+            count += 1;
         }
+        
+        assert(hashes.count == count);
         
         return EXIT_SUCCESS;
     }

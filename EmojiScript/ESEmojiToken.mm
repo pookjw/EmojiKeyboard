@@ -213,7 +213,12 @@ namespace std {
 + (NSDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> *)emojiTokenReferencesFromEmojiTokens:(NSArray<ESEmojiToken *> *)emojiTokens {
     NSMutableDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> * result = [NSMutableDictionary new];
     
-    abort();
+    for (ESEmojiToken *emojiToken in emojiTokens) @autoreleasepool {
+        if (emojiToken.unicodes.size() == 0) {
+            result[emojiToken] = @[];
+            continue;
+        }
+    }
     
     return [result autorelease];
 }
@@ -255,7 +260,22 @@ namespace std {
 
 - (NSUInteger)hash {
     size_t unicodesash = std::hash<std::vector<UChar32>>()(_unicodes);
-    return static_cast<NSUInteger>(unicodesash) ^ _emojiType;
+//    return static_cast<NSUInteger>(unicodesash) ^ _emojiType;
+    NSLog(@"%ld", _strings.hash);
+    return _strings.hash;
+}
+
+- (id)copyWithZone:(struct _NSZone *)zone {
+    id copy = [[[self class] allocWithZone:zone] init];
+    
+    if (copy) {
+        auto casted = static_cast<__kindof ESEmojiToken *>(copy);
+        casted->_unicodes = _unicodes;
+        casted->_strings = [_strings copy];
+        casted->_emojiType = _emojiType;
+    }
+    
+    return copy;
 }
 
 @end
