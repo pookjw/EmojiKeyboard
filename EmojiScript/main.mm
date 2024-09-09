@@ -22,27 +22,13 @@ int main(int argc, const char * argv[]) {
         NSMutableSet<NSNumber *> *hashes = [NSMutableSet new];
         NSUInteger count = 0;
         
-        NSArray<ESEmojiToken *> *tokens = [ESEmojiToken emojiTokensFromURL:emojiSequencesURL];
-        [tokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-            if (idx + 1 == tokens.count) {
-                *stop = YES;
-                return;
-            }
-            
-            [[tokens subarrayWithRange:NSMakeRange(idx + 1, tokens.count - idx - 1)] enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull other, NSUInteger idx, BOOL * _Nonnull stop) {
-                assert(obj.hash != other.hash);
-            }];
-        }];
-        
-        for (ESEmojiToken *token in tokens){
-            NSLog(@"%@", token.description);
+        for (ESEmojiToken *token in [ESEmojiToken emojiTokensFromURL:emojiSequencesURL]){
             [hashes addObject:@(token.hash)];
             count += 1;
         }
         assert(hashes.count == count);
         
         for (ESEmojiToken *token in [ESEmojiToken emojiTokensFromURL:emojiZWJSequencesURL]){
-            NSLog(@"%@", token.description);
             [hashes addObject:@(token.hash)];
             count += 1;
         }

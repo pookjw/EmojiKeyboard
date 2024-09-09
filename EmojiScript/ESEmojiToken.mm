@@ -74,10 +74,8 @@ namespace std {
     NSMutableArray<ESEmojiToken *> *emojiTokens = [NSMutableArray new];
     
     for (NSString *textLine in enumerator) {
-        ESEmojiToken * _Nullable emojiToken = [ESEmojiToken _emojiTokenFromTextLine:textLine];
-        if (emojiToken == nil) continue;
-        
-        [emojiTokens addObject:emojiToken];
+        NSArray<ESEmojiToken *> *_emojiTokens = [ESEmojiToken _emojiTokensFromTextLine:textLine];
+        [emojiTokens addObjectsFromArray:_emojiTokens];
     }
     
     [enumerator release];
@@ -85,7 +83,7 @@ namespace std {
     return [emojiTokens autorelease];
 }
 
-+ (ESEmojiToken * _Nullable)_emojiTokenFromTextLine:(NSString *)textLine {
++ (NSArray<ESEmojiToken *> *)_emojiTokensFromTextLine:(NSString *)textLine {
     if ([[textLine stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet] hasPrefix:@"#"]) return nil;
     
     NSArray<NSString *> *components = [textLine componentsSeparatedByString:@";"];
@@ -102,10 +100,22 @@ namespace std {
     NSString *emojiTypeString = [components[1] stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
     ESEmojiTokenType emojiType = ESEmojiTokenTypeFromNSString(emojiTypeString);
     
-    return [[[ESEmojiToken alloc] initWithUnicodes:unicodes emojiType:emojiType strings:strings] autorelease];
+    //
+    
+    NSMutableArray<ESEmojiToken *> *results = [[NSMutableArray alloc] initWithCapacity:strings.count];
+    [strings enumerateObjectsUsingBlock:^(NSString * _Nonnull string, NSUInteger idx, BOOL * _Nonnull stop) {
+        ESEmojiToken *emojiToken = [[ESEmojiToken alloc] initWithUnicode:unicodes[idx] emojiType:emojiType string:string];
+        [results addObject:emojiToken];
+        [emojiToken release];
+    }];
+    
+    return [results autorelease];
 }
 
 + (NSArray<NSString *> *)_stringsFromTextString:(NSString *)string unicodesOut:(std::vector<UChar32> *)unicodesOut {
+    // TODO: NSString * 하나당 std::vector<UChar32> *이 반환되어야 함. 00A9 FE0F은 unicode가 2개지만 문자는 하나임
+    // 현재는 NSString * 하나당 UChar32 하나만 반환되는 구조
+    abort();
     assert(string.length > 0);
     assert(sizeof(unsigned) == sizeof(UChar32));
     
@@ -214,7 +224,10 @@ namespace std {
     NSMutableDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> * result = [NSMutableDictionary new];
     
     for (ESEmojiToken *emojiToken in emojiTokens) @autoreleasepool {
-        if (emojiToken.unicodes.size() == 0) {
+        /*
+         1FAF6 1F3FC
+         */
+        if (emojiToken.unicodes.size() == 1) {
             result[emojiToken] = @[];
             continue;
         }
@@ -223,30 +236,23 @@ namespace std {
     return [result autorelease];
 }
 
-- (instancetype)initWithUnicodes:(std::vector<UChar32>)unicodes emojiType:(ESEmojiTokenType)emojiType strings:(NSArray<NSString *> *)strings {
+- (instancetype)initWithUnicode:(UChar32)unicode emojiType:(ESEmojiTokenType)emojiType string:(NSString *)string {
     if (self = [super init]) {
-        _unicodes = unicodes;
+        _unicode = unicode;
         _emojiType = emojiType;
-        _strings = [strings copy];
+        _string = [string copy];
     }
     
     return self;
 }
 
 - (void)dealloc {
-    [_strings release];
+    [_string release];
     [super dealloc];
 }
 
 - (NSString *)description {
-    NSMutableString *strings = [NSMutableString new];
-    for (NSString *string in _strings) {
-        [strings appendString:string];
-    }
-    
-    NSString *result = [NSString stringWithFormat:@"%@(strings: %@)", [super description], strings];
-    [strings release];
-    return result;
+    return [NSString stringWithFormat:@"%@(string: %@)", [super description], _string];
 }
 
 - (BOOL)isEqual:(id)other {
@@ -254,22 +260,24 @@ namespace std {
         return YES;
     } else {
         auto casted = static_cast<ESEmojiToken *>(other);
-        return _unicodes == casted->_unicodes && _emojiType == casted->_emojiType;
+        return _unicode == casted->_unicode && _emojiType == casted->_emojiType && [_string isEqualToString:casted->_string];
     }
 }
 
 - (NSUInteger)hash {
-    __block NSUInteger hash = 0;
+    NSUInteger hash = 0;
     
     hash ^= _emojiType;
-    
-    [_strings enumerateObjectsUsingBlock:^(NSString * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        hash ^= (obj.hash << (idx + 1));
-    }];
-    
-    size_t unicodesash = std::hash<std::vector<UChar32>>()(_unicodes);
-    hash ^= static_cast<NSUInteger>(unicodesash);
-    
+
+    NSData *data = [_string dataUsingEncoding:NSUTF32LittleEndianStringEncoding];
+    const uint32_t *unicodeScalars = (const uint32_t *)data.bytes;
+    NSUInteger length = data.length / sizeof(uint32_t);
+
+    for (NSUInteger i = 0; i < length; i++) {
+        uint32_t codepoint = unicodeScalars[i];
+        hash = hash * 31 + codepoint;
+    }
+
     return hash;
 }
 
@@ -278,8 +286,8 @@ namespace std {
     
     if (copy) {
         auto casted = static_cast<__kindof ESEmojiToken *>(copy);
-        casted->_unicodes = _unicodes;
-        casted->_strings = [_strings copy];
+        casted->_unicode = _unicode;
+        casted->_string = [_string copy];
         casted->_emojiType = _emojiType;
     }
     
