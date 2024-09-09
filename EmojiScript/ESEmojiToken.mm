@@ -80,6 +80,8 @@ namespace std {
         [emojiTokens addObject:emojiToken];
     }
     
+    [enumerator release];
+    
     return [emojiTokens autorelease];
 }
 
