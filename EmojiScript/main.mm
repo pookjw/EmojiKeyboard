@@ -19,21 +19,62 @@ int main(int argc, const char * argv[]) {
             return EXIT_FAILURE;
         }
         
-        NSMutableSet<NSNumber *> *hashes = [NSMutableSet new];
-        NSUInteger count = 0;
+        //
         
-        for (ESEmojiToken *token in [ESEmojiToken emojiTokensFromURL:emojiSequencesURL]){
-            [hashes addObject:@(token.hash)];
+        NSArray<ESEmojiToken *> *emojiTokens = [ESEmojiToken emojiTokensFromURL:emojiSequencesURL];
+        NSArray<ESEmojiToken *> *emojiZWJSequencesTokens = [ESEmojiToken emojiTokensFromURL:emojiZWJSequencesURL];
+        
+        //
+        
+        NSMutableSet<ESEmojiToken *> *tokens = [NSMutableSet new];
+        __block NSUInteger count = 0;
+        
+        for (ESEmojiToken *token in emojiTokens){
+            [tokens addObject:token];
+//            NSLog(@"%@", token.string);
             count += 1;
         }
-        assert(hashes.count == count);
+        assert(tokens.count == count);
         
-        for (ESEmojiToken *token in [ESEmojiToken emojiTokensFromURL:emojiZWJSequencesURL]){
-            [hashes addObject:@(token.hash)];
+        for (ESEmojiToken *token in emojiZWJSequencesTokens){
+            [tokens addObject:token];
+//            NSLog(@"%@", token.string);
             count += 1;
         }
         
-        assert(hashes.count == count);
+        assert(tokens.count == count);
+        
+        //
+        
+        NSDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> *emojiTokenReferences = [ESEmojiToken emojiTokenReferencesFromEmojiTokens:[emojiTokens arrayByAddingObjectsFromArray:emojiZWJSequencesTokens]];
+        
+        [emojiTokenReferences enumerateKeysAndObjectsUsingBlock:^(ESEmojiToken * _Nonnull key, NSArray<ESEmojiToken *> * _Nonnull obj, BOOL * _Nonnull stop) {
+            NSLog(@"%@", key.string);
+            
+            assert([tokens containsObject:key]);
+            [tokens removeObject:key];
+            
+            [obj enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+                NSLog(@"    - %@", obj.string);
+                assert([tokens containsObject:obj]);
+                [tokens removeObject:obj];
+            }];
+            
+        }];
+        
+        assert(tokens.count == 0);
+        
+        /*
+         💑
+             - 💑🏻
+             - 💑🏼
+             - 💑🏽
+             - 💑🏾
+             - 💑🏿
+         
+         1F468 200D 2764 FE0F 200D 1F48B 200D 1F468 👨‍❤️‍💋‍👨
+         */
+        //
         
         return EXIT_SUCCESS;
     }

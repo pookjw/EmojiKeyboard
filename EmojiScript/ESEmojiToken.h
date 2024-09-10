@@ -24,7 +24,7 @@ extern NSString * NSStringFromESEmojiTokenType(ESEmojiTokenType emojiType);
 extern ESEmojiTokenType ESEmojiTokenTypeFromNSString(NSString *string);
 
 @interface ESEmojiToken : NSObject <NSCopying>
-@property (assign, nonatomic, readonly) std::vector<UChar32> unicodes;
+@property (assign, nonatomic, readonly) const std::vector<UChar32> unicodes;
 @property (assign, nonatomic, readonly) ESEmojiTokenType emojiType;
 @property (copy, nonatomic, readonly) NSString *string;
 + (NSArray<ESEmojiToken *> *)emojiTokensFromURL:(NSURL *)URL;

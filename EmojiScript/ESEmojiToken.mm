@@ -11,6 +11,7 @@
 #include <ranges>
 #include <algorithm>
 #include <vector>
+#include <numeric>
 
 NSString * NSStringFromESEmojiTokenType(ESEmojiTokenType emojiType) {
     switch (emojiType) {
@@ -66,7 +67,13 @@ namespace std {
     };
 }
 
+@interface ESEmojiToken () {
+    std::vector<UChar32> _unicodes;
+}
+@end
+
 @implementation ESEmojiToken
+@synthesize unicodes = _unicodes;
 
 + (NSArray<ESEmojiToken *> *)emojiTokensFromURL:(NSURL *)URL {
     ESTextLineEnumerator *enumerator = [[ESTextLineEnumerator alloc] initWithURL:URL];
@@ -223,15 +230,132 @@ namespace std {
 + (NSDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> *)emojiTokenReferencesFromEmojiTokens:(NSArray<ESEmojiToken *> *)emojiTokens {
     NSMutableDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> * result = [NSMutableDictionary new];
     
-    for (ESEmojiToken *emojiToken in emojiTokens) @autoreleasepool {
-        /*
-         1FAF6 1F3FC
-         */
-        if (emojiToken.unicodes.size() == 1) {
-            result[emojiToken] = @[];
-            continue;
+    [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull emojiToken, NSUInteger emojiTokenIdx, BOOL * _Nonnull stop) {
+        switch (emojiToken.emojiType) {
+            case ESEmojiTokenBasic: {
+                /*
+                 261D FE0F (Base)
+                 261D 1F3FB
+                 261D 1F3FC
+                 */
+                auto filteredUnicode = emojiToken.unicodes | std::views::filter([](UChar32 &unicode) { return unicode != 0xFE0F; }) | std::ranges::to<std::vector<UChar32>>();
+                
+                if (filteredUnicode.size() == 1) {
+                    NSMutableArray<ESEmojiToken *> *references = [NSMutableArray new];
+                    
+                    UChar32 baseUnicode = emojiToken.unicodes[0];
+                    
+                    [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull otherEmojiToken, NSUInteger otherEmojiTokenIdx, BOOL * _Nonnull stop) {
+                        if (emojiTokenIdx == otherEmojiTokenIdx) return;
+                        if (otherEmojiToken.emojiType != ESEmojiTokenModifierSequence) return;
+                        
+                        if (otherEmojiToken.unicodes[0] == baseUnicode) {
+                            [references addObject:otherEmojiToken];
+                        }
+                    }];
+                    
+                    result[emojiToken] = references;
+                    [references release];
+                } else {
+                    result[emojiToken] = @[];
+                }
+                break;
+            }
+            case ESEmojiTokenKeycapSequence:
+            case ESEmojiTokenTagSequence:
+            case ESEmojiTokenFlagSequence: {
+                result[emojiToken] = @[];
+                break;
+            }
+            case ESEmojiTokenZMJSequence: {
+                NSMutableArray<ESEmojiToken *> *references = [NSMutableArray new];
+                
+                //
+                
+                auto unicodesByZWJ = emojiToken.unicodes
+                /*
+                 1F3CB FE0F 200D 2640 FE0F (Base)
+                 1F3CB 1F3FD 200D 2640 FE0F
+                 1F3CB 1F3FE 200D 2640 FE0F
+                 */
+                | std::views::filter([](UChar32 unicode) { return unicode != 0xFE0F; })
+                | std::views::split(0x200D)
+                | std::views::transform([](auto &&subrange) {
+                    return std::vector<int>(subrange.begin(), subrange.end());
+                })
+                | std::ranges::to<std::vector<std::vector<UChar32>>>();
+                
+                //
+                
+                [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull otherEmojiToken, NSUInteger otherEmojiTokenIdx, BOOL * _Nonnull stop) {
+                    if (emojiTokenIdx == otherEmojiTokenIdx) return;
+                    if (otherEmojiToken.emojiType != ESEmojiTokenZMJSequence) return;
+                    
+                    //
+                    
+                    auto otherUnicodesByZWJ = otherEmojiToken.unicodes
+                    | std::views::filter([](UChar32 unicode) { return unicode != 0xFE0F; })
+                    | std::views::split(0x200D)
+                    | std::views::transform([](auto &&subrange) {
+                        return std::vector<int>(subrange.begin(), subrange.end());
+                    })
+                    | std::ranges::to<std::vector<std::vector<UChar32>>>();
+                    
+                    //
+                    
+                    /*
+                     1F9D8 200D 2640 FE0F (Base)
+                     1F9D8 1F3FD 200D 2640 FE0F
+                     1F9D8 1F3FB 200D 2640 FE0F
+                     마지막 둘끼리 비교할 때는 무시해야함
+                     */
+                    if (
+                        std::accumulate(otherUnicodesByZWJ.begin(), otherUnicodesByZWJ.end(), 0, [](int sum, const std::vector<UChar32>& v) {
+                            return sum + v.size();
+                        })
+                        <=
+                        std::accumulate(unicodesByZWJ.begin(), unicodesByZWJ.end(), 0, [](int sum, const std::vector<UChar32>& v) {
+                            return sum + v.size();
+                        })
+                        )
+                    {
+                        return;
+                    }
+                    
+                    //
+                    
+                    if (unicodesByZWJ.size() != otherUnicodesByZWJ.size()) return;
+                    
+                    for (size_t idx = 0; idx < unicodesByZWJ.size(); idx++) {
+                        std::vector<UChar32> unicodes = unicodesByZWJ[idx];
+                        std::vector<UChar32> otherUnicodes = otherUnicodesByZWJ[idx];
+                        
+                        if (otherUnicodes.size() < unicodes.size()) return;
+                        if (unicodes[0] != otherUnicodes[0]) return;
+                    }
+                    
+                    [references addObject:otherEmojiToken];
+                }];
+                
+                if (references.count == 0) {
+                    [references release];
+                    return;
+                }
+                
+                result[emojiToken] = references;
+                [references release];
+                break;
+            }
+            default:
+                assert(emojiToken.emojiType == ESEmojiTokenModifierSequence);
+                assert(emojiToken.unicodes.size() > 1);
+                break;
         }
-    }
+    }];
+    
+    /*
+     1FAF1 1F3FD 200D 1FAF2 1F3FB
+     */
     
     return [result autorelease];
 }
@@ -269,7 +393,7 @@ namespace std {
     
     hash ^= _emojiType;
 
-    NSData *data = [_string dataUsingEncoding:NSUTF32LittleEndianStringEncoding];
+    NSData *data = [_string dataUsingEncoding:NSUTF32StringEncoding];
     const uint32_t *unicodeScalars = (const uint32_t *)data.bytes;
     NSUInteger length = data.length / sizeof(uint32_t);
 
