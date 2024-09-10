@@ -92,7 +92,7 @@ namespace std {
     //
     
     NSString *unicharsRangeString = components[0];
-    std::vector<UChar32> unicodes;
+    std::vector<std::vector<UChar32>> unicodes;
     NSArray<NSString *> *strings = [ESEmojiToken _stringsFromTextString:unicharsRangeString unicodesOut:&unicodes];
     
     //
@@ -104,7 +104,7 @@ namespace std {
     
     NSMutableArray<ESEmojiToken *> *results = [[NSMutableArray alloc] initWithCapacity:strings.count];
     [strings enumerateObjectsUsingBlock:^(NSString * _Nonnull string, NSUInteger idx, BOOL * _Nonnull stop) {
-        ESEmojiToken *emojiToken = [[ESEmojiToken alloc] initWithUnicode:unicodes[idx] emojiType:emojiType string:string];
+        ESEmojiToken *emojiToken = [[ESEmojiToken alloc] initWithUnicodes:unicodes[idx] emojiType:emojiType string:string];
         [results addObject:emojiToken];
         [emojiToken release];
     }];
@@ -112,10 +112,7 @@ namespace std {
     return [results autorelease];
 }
 
-+ (NSArray<NSString *> *)_stringsFromTextString:(NSString *)string unicodesOut:(std::vector<UChar32> *)unicodesOut {
-    // TODO: NSString * 하나당 std::vector<UChar32> *이 반환되어야 함. 00A9 FE0F은 unicode가 2개지만 문자는 하나임
-    // 현재는 NSString * 하나당 UChar32 하나만 반환되는 구조
-    abort();
++ (NSArray<NSString *> *)_stringsFromTextString:(NSString *)string unicodesOut:(std::vector<std::vector<UChar32>> *)unicodesOut {
     assert(string.length > 0);
     assert(sizeof(unsigned) == sizeof(UChar32));
     
@@ -144,15 +141,18 @@ namespace std {
         UChar32 endCode;
         assert([endCodeScanner scanHexInt:reinterpret_cast<unsigned *>(&endCode)]);
         
-        auto unicodes = std::ranges::iota_view(startCode, endCode + 1) | std::ranges::to<std::vector<UChar32>>();
+        std::vector<std::vector<UChar32>> unicodes {};
+        unicodes.reserve(endCode - startCode + 1);
+        
+        auto stringsVec = std::ranges::iota_view(startCode, endCode + 1)
+        | std::views::transform([&unicodes](UChar32 unicode) {
+            unicodes.push_back({unicode});
+            return [ESEmojiToken _stringFromUnicodes:{unicode}];
+        }) | std::ranges::to<std::vector<NSString *>>();
+        
         if (unicodesOut != nullptr) {
             *unicodesOut = unicodes;
         }
-        
-        auto stringsVec = unicodes
-        | std::views::transform([](UChar32 unicode) {
-            return [ESEmojiToken _stringFromUnicodes:{unicode}];
-        }) | std::ranges::to<std::vector<NSString *>>();
         
         return [[[NSArray alloc] initWithObjects:stringsVec.data() count:stringsVec.size()] autorelease];
     } else if ([trimmed containsString:@" "]) {
@@ -169,7 +169,7 @@ namespace std {
         }
         
         if (unicodesOut != nullptr) {
-            *unicodesOut = unicodes;
+            *unicodesOut = {unicodes};
         }
         
         return @[[ESEmojiToken _stringFromUnicodes:unicodes]];
@@ -180,7 +180,7 @@ namespace std {
         assert([scanner scanHexInt:reinterpret_cast<unsigned *>(&unicode)]);
         
         if (unicodesOut != nullptr) {
-            *unicodesOut = {unicode};
+            *unicodesOut = {{unicode}};
         }
         
         return @[[ESEmojiToken _stringFromUnicodes:{unicode}]];
@@ -236,9 +236,9 @@ namespace std {
     return [result autorelease];
 }
 
-- (instancetype)initWithUnicode:(UChar32)unicode emojiType:(ESEmojiTokenType)emojiType string:(NSString *)string {
+- (instancetype)initWithUnicodes:(std::vector<UChar32>)unicodes emojiType:(ESEmojiTokenType)emojiType string:(NSString *)string {
     if (self = [super init]) {
-        _unicode = unicode;
+        _unicodes = unicodes;
         _emojiType = emojiType;
         _string = [string copy];
     }
@@ -260,7 +260,7 @@ namespace std {
         return YES;
     } else {
         auto casted = static_cast<ESEmojiToken *>(other);
-        return _unicode == casted->_unicode && _emojiType == casted->_emojiType && [_string isEqualToString:casted->_string];
+        return /*_unicodes == casted->_unicodes &&*/ _emojiType == casted->_emojiType && [_string isEqualToString:casted->_string];
     }
 }
 
@@ -286,7 +286,7 @@ namespace std {
     
     if (copy) {
         auto casted = static_cast<__kindof ESEmojiToken *>(copy);
-        casted->_unicode = _unicode;
+        casted->_unicodes = _unicodes;
         casted->_string = [_string copy];
         casted->_emojiType = _emojiType;
     }
