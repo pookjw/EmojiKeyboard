@@ -109,6 +109,12 @@ namespace std {
     
     //
     
+    NSMutableString *identifier = [[components[2] componentsSeparatedByString:@"#"][0] mutableCopy];
+    
+    // TODO
+    
+    //
+    
     NSMutableArray<ESEmojiToken *> *results = [[NSMutableArray alloc] initWithCapacity:strings.count];
     [strings enumerateObjectsUsingBlock:^(NSString * _Nonnull string, NSUInteger idx, BOOL * _Nonnull stop) {
         ESEmojiToken *emojiToken = [[ESEmojiToken alloc] initWithUnicodes:unicodes[idx] emojiType:emojiType string:string];
@@ -247,10 +253,31 @@ namespace std {
                     
                     [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull otherEmojiToken, NSUInteger otherEmojiTokenIdx, BOOL * _Nonnull stop) {
                         if (emojiTokenIdx == otherEmojiTokenIdx) return;
-                        if (otherEmojiToken.emojiType != ESEmojiTokenModifierSequence) return;
                         
-                        if (otherEmojiToken.unicodes[0] == baseUnicode) {
-                            [references addObject:otherEmojiToken];
+                        switch (otherEmojiToken.emojiType) {
+                            case ESEmojiTokenModifierSequence: {
+                                if (otherEmojiToken.unicodes[0] == baseUnicode) {
+                                    [references addObject:otherEmojiToken];
+                                }
+                                break;
+                            }
+                            case ESEmojiTokenZMJSequence: {
+                                // TODO: Key로 찾기
+//                                if (baseUnicode == 0x1F91D && otherEmojiToken.unicodes[0] == 0x1FAF1) {
+//                                    // 🤝 -> 🫱🏼‍🫲🏻 / 🫱🏼‍🫲🏾
+//                                    [references addObject:otherEmojiToken];
+//                                } else if (baseUnicode == 0x1F46C &&
+//                                           (std::accumulate(otherEmojiToken->_unicodes.cbegin(), otherEmojiToken->_unicodes.cend(), 0, [](size_t num, const UChar32 &unicode) {
+//                                    return num + (unicode == 0x1F468);
+//                                }) == 2) &&
+//                                           otherEmojiToken->_unicodes.con) {
+//                                    // 👬 -> 👨🏻‍🤝‍👨🏼, 👨🏻‍🤝‍👨🏾
+//                                    [references addObject:otherEmojiToken];
+//                                }
+                                break;
+                            }
+                            default:
+                                break;
                         }
                     }];
                     
@@ -360,11 +387,12 @@ namespace std {
     return [result autorelease];
 }
 
-- (instancetype)initWithUnicodes:(std::vector<UChar32>)unicodes emojiType:(ESEmojiTokenType)emojiType string:(NSString *)string {
+- (instancetype)initWithUnicodes:(std::vector<UChar32>)unicodes emojiType:(ESEmojiTokenType)emojiType string:(NSString *)string identifier:(NSString *)identifier {
     if (self = [super init]) {
         _unicodes = unicodes;
         _emojiType = emojiType;
         _string = [string copy];
+        _identifier = [identifier copy];
     }
     
     return self;
@@ -372,6 +400,7 @@ namespace std {
 
 - (void)dealloc {
     [_string release];
+    [_identifier release];
     [super dealloc];
 }
 
@@ -384,7 +413,7 @@ namespace std {
         return YES;
     } else {
         auto casted = static_cast<ESEmojiToken *>(other);
-        return /*_unicodes == casted->_unicodes &&*/ _emojiType == casted->_emojiType && [_string isEqualToString:casted->_string];
+        return /*_unicodes == casted->_unicodes &&*/ _emojiType == casted->_emojiType && [_string isEqualToString:casted->_string] && [_identifier isEqualToString:casted->_identifier];
     }
 }
 
@@ -412,6 +441,7 @@ namespace std {
         auto casted = static_cast<__kindof ESEmojiToken *>(copy);
         casted->_unicodes = _unicodes;
         casted->_string = [_string copy];
+        casted->_identifier = [_identifier copy];
         casted->_emojiType = _emojiType;
     }
     

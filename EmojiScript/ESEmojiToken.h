@@ -27,6 +27,7 @@ extern ESEmojiTokenType ESEmojiTokenTypeFromNSString(NSString *string);
 @property (assign, nonatomic, readonly) const std::vector<UChar32> unicodes;
 @property (assign, nonatomic, readonly) ESEmojiTokenType emojiType;
 @property (copy, nonatomic, readonly) NSString *string;
+@property (copy, nonatomic, readonly) NSString *identifier;
 + (NSArray<ESEmojiToken *> *)emojiTokensFromURL:(NSURL *)URL;
 + (NSDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> *)emojiTokenReferencesFromEmojiTokens:(NSArray<ESEmojiToken *> *)emojiTokens;
 + (instancetype)new NS_UNAVAILABLE;
