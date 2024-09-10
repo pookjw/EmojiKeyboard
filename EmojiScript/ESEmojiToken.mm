@@ -310,11 +310,11 @@ namespace std {
                      마지막 둘끼리 비교할 때는 무시해야함
                      */
                     if (
-                        std::accumulate(otherUnicodesByZWJ.begin(), otherUnicodesByZWJ.end(), 0, [](size_t sum, const std::vector<UChar32>& v) {
+                        std::accumulate(otherUnicodesByZWJ.cbegin(), otherUnicodesByZWJ.cend(), 0, [](size_t sum, const std::vector<UChar32>& v) {
                             return sum + v.size();
                         })
                         <=
-                        std::accumulate(unicodesByZWJ.begin(), unicodesByZWJ.end(), 0, [](size_t sum, const std::vector<UChar32>& v) {
+                        std::accumulate(unicodesByZWJ.cbegin(), unicodesByZWJ.cend(), 0, [](size_t sum, const std::vector<UChar32>& v) {
                             return sum + v.size();
                         })
                         )
