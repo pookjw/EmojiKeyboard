@@ -46,6 +46,7 @@
     storeDescription.shouldAddStoreAsynchronously = YES;
     storeDescription.shouldMigrateStoreAutomatically = NO;
     storeDescription.shouldInferMappingModelAutomatically = NO;
+    storeDescription.readOnly = YES;
     
     __weak auto weakSelf = self;
     
@@ -89,6 +90,10 @@
     }];
     
     [storeDescription release];
+}
+
+- (NSManagedObject *)managedObjectAtIndexPath:(NSIndexPath *)indexPath {
+    return [_fetchedResultsController objectAtIndexPath:indexPath];
 }
 
 - (void)controller:(NSFetchedResultsController *)controller didChangeContentWithSnapshot:(NSDiffableDataSourceSnapshot<NSString *,NSManagedObjectID *> *)snapshot {

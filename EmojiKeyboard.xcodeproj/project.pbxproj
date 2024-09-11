@@ -14,6 +14,7 @@
 		4FCA34622C919DC8007CEC69 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4FCA34612C919DC8007CEC69 /* CoreData.framework */; };
 		4FCA34632C919DD8007CEC69 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4FCA34612C919DC8007CEC69 /* CoreData.framework */; };
 		4FCA34682C91A014007CEC69 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4FCA34672C91A014007CEC69 /* UIKit.framework */; platformFilter = ios; };
+		4FEB36322C91C74100A3960E /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4FEB36312C91C74100A3960E /* CoreGraphics.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +72,8 @@
 		4FCA343A2C918EAC007CEC69 /* libEmojiDataLibrary.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libEmojiDataLibrary.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FCA34612C919DC8007CEC69 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		4FCA34672C91A014007CEC69 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		4FEB362F2C91C73A00A3960E /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		4FEB36312C91C74100A3960E /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -145,6 +148,7 @@
 			files = (
 				4FCA345E2C919D7E007CEC69 /* libEmojiDataLibrary.a in Frameworks */,
 				4FCA34682C91A014007CEC69 /* UIKit.framework in Frameworks */,
+				4FEB36322C91C74100A3960E /* CoreGraphics.framework in Frameworks */,
 				4FCA34632C919DD8007CEC69 /* CoreData.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -195,6 +199,8 @@
 		4F0DC4372C8C363400A6AA2B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				4FEB36312C91C74100A3960E /* CoreGraphics.framework */,
+				4FEB362F2C91C73A00A3960E /* QuartzCore.framework */,
 				4FCA34672C91A014007CEC69 /* UIKit.framework */,
 				4FCA34612C919DC8007CEC69 /* CoreData.framework */,
 				4F0DC4382C8C363400A6AA2B /* CoreData.framework */,
