@@ -10,6 +10,7 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 
+__attribute__((objc_direct_members))
 @interface EmojisViewModel () <NSFetchedResultsControllerDelegate>
 @property (retain, nonatomic, readonly) UICollectionViewDiffableDataSource<NSString *, NSManagedObjectID *> *dataSource;
 @property (retain, nonatomic, nullable) NSManagedObjectContext *managedObjectContext;
@@ -98,6 +99,19 @@
     }];
     
     [storeDescription release];
+}
+
+- (NSString *)main_emojiStringAtIndexPath:(NSIndexPath *)indexPath identifierOut:(NSString * _Nonnull *)identifierOut {
+    NSManagedObjectID *managedObjectID = [_fetchedResultsController objectAtIndexPath:indexPath].objectID;
+    NSManagedObject *managedObject = [_mainManagedObjectContext objectWithID:managedObjectID];
+    NSString *string = [managedObject valueForKey:@"string"];
+    NSString *identifier = [managedObject valueForKey:@"identifier"];
+    
+    if (identifierOut != nullptr) {
+        *identifierOut = identifier;
+    }
+    
+    return string;
 }
 
 - (NSArray<NSString *> *)main_childEmojiStringsAtIndexPath:(NSIndexPath *)indexPath identifiersOut:(NSArray<NSString *> * _Nonnull *)identifiersOut {

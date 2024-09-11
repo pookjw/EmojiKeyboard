@@ -15,6 +15,7 @@
 
 - (void)loadView {
     UITextView *textView = [UITextView new];
+    textView.font = [UIFont preferredFontForTextStyle:UIFontTextStyleLargeTitle];
     textView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentAlways;
     self.view = textView;
     [textView release];

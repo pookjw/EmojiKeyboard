@@ -7,6 +7,7 @@
 
 #import "EmojiContentView.h"
 
+__attribute__((objc_direct_members))
 @interface EmojiContentView ()
 @property (copy, nonatomic) EmojiContentConfiguration *contentConfiguration;
 @property (retain, nonatomic, readonly) UILabel *label;

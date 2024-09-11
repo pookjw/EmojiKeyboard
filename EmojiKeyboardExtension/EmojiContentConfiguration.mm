@@ -8,6 +8,7 @@
 #import "EmojiContentConfiguration.h"
 #import "EmojiContentView.h"
 
+__attribute__((objc_direct_members))
 @interface EmojiContentConfiguration ()
 @property (assign, nonatomic, readonly) CGRect initialFrame;
 @end

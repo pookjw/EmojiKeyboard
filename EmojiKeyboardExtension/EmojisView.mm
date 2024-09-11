@@ -11,6 +11,7 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 
+__attribute__((objc_direct_members))
 @interface EmojisView () <UICollectionViewDelegate, UICollectionViewDelegateFlowLayout>
 @property (retain, nonatomic, readonly) UICollectionView *collectionView;
 @property (retain, nonatomic, readonly) UICollectionViewCellRegistration *cellRegistration;
@@ -105,7 +106,7 @@
     return cellRegistration;
 }
 
-- (UICollectionViewDiffableDataSource<NSString *, NSManagedObjectID *> *)newDataSource {
+- (UICollectionViewDiffableDataSource<NSString *, NSManagedObjectID *> *)newDataSource  __attribute__((objc_direct)) {
     UICollectionViewCellRegistration *cellRegistration = self.cellRegistration;
     
     UICollectionViewDiffableDataSource<NSString *, NSManagedObjectID *> *dataSource = [[UICollectionViewDiffableDataSource alloc] initWithCollectionView:self.collectionView cellProvider:^UICollectionViewCell * _Nullable(UICollectionView * _Nonnull collectionView, NSIndexPath * _Nonnull indexPath, NSManagedObjectID * _Nonnull itemIdentifier) {
@@ -120,30 +121,50 @@
     NSIndexPath * _Nullable indexPath = indexPaths.firstObject;
     if (indexPath == nil) return nil;
     
+    EmojisViewModel *viewModel = self.viewModel;
+    
+    NSString *identifier;
+    NSString *string = [viewModel main_emojiStringAtIndexPath:indexPath identifierOut:&identifier];
+    
     NSArray<NSString *> *childIdentifiers;
-    NSArray<NSString *> *childEmojiStrings = [self.viewModel main_childEmojiStringsAtIndexPath:indexPath identifiersOut:&childIdentifiers];
+    NSArray<NSString *> *childEmojiStrings = [viewModel main_childEmojiStringsAtIndexPath:indexPath identifiersOut:&childIdentifiers];
+    
+    __weak auto weakSelf = self;
     
     UIContextMenuConfiguration *contextMenuConfiguration = [UIContextMenuConfiguration configurationWithIdentifier:nil
                                                                                                    previewProvider:^UIViewController * _Nullable{
         return nil;
     }
                                                                                                     actionProvider:^UIMenu * _Nullable(NSArray<UIMenuElement *> * _Nonnull suggestedActions) {
-        NSMutableArray<UIMenuElement *> *actions = [[NSMutableArray alloc] initWithCapacity:childEmojiStrings.count];
+        UIAction *action = [UIAction actionWithTitle:string image:nil identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+            [weakSelf.keyInput insertText:string];
+        }];
+        
+        action.subtitle = identifier;
+        
+        //
+        
+        NSMutableArray<UIMenuElement *> *childActions = [[NSMutableArray alloc] initWithCapacity:childEmojiStrings.count];
         
         [childEmojiStrings enumerateObjectsUsingBlock:^(NSString * _Nonnull string, NSUInteger idx, BOOL * _Nonnull stop) {
             NSString *identifier = childIdentifiers[idx];
             
             UIAction *action = [UIAction actionWithTitle:string image:nil identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-                
+                [weakSelf.keyInput insertText:string];
             }];
             
             action.subtitle = identifier;
             
-            [actions addObject:action];
+            [childActions addObject:action];
         }];
         
-        UIMenu *menu = [UIMenu menuWithChildren:actions];
-        [actions release];
+        UIMenu *childrenMenu = [UIMenu menuWithTitle:@"" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:childActions];
+        [childActions release];
+        
+        UIMenu *menu = [UIMenu menuWithChildren:@[
+            action,
+            childrenMenu
+        ]];
         
         return menu;
     }];

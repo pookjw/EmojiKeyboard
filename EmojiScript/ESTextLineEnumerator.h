@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 //#if USE_STACK_POINTER
 //NS_SWIFT_UNAVAILABLE_FROM_ASYNC("Unavaiable when USE_STACK_POINTER.")
 //#endif
+__attribute__((objc_direct_members))
 @interface ESTextLineEnumerator : NSObject <NSFastEnumeration> /*NSEnumerator*/
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)init NS_UNAVAILABLE;

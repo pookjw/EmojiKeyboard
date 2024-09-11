@@ -9,6 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+__attribute__((objc_direct_members))
 @interface ESArgumentParser : NSObject
 @property (class, nonatomic, readonly, nullable) NSURL *emojiSequencesURL;
 @property (class, nonatomic, readonly, nullable) NSURL *emojiZWJSequencesURL;

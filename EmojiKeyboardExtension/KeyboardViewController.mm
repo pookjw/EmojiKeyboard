@@ -7,6 +7,10 @@
 
 #import "KeyboardViewController.h"
 #import "EmojisView.h"
+#import <objc/message.h>
+#import <objc/runtime.h>
+
+OBJC_EXPORT id objc_msgSendSuper2(void);
 
 @interface KeyboardViewController ()
 @property (retain, nonatomic, readonly) EmojisView *emojisView;
@@ -32,6 +36,13 @@
     
     _emojisView = [emojisView retain];
     return [emojisView autorelease];
+}
+
+- (void)_setTextDocumentProxy:(id<UITextDocumentProxy>)textDocumentProxy {
+    objc_super superInfo = { self, [self class] };
+    reinterpret_cast<void (*)(objc_super *, SEL, id)>(objc_msgSendSuper2)(&superInfo, _cmd, textDocumentProxy);
+    
+    self.emojisView.keyInput = self.textDocumentProxy;
 }
 
 @end

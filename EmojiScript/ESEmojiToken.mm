@@ -50,23 +50,6 @@ ESEmojiTokenType ESEmojiTokenTypeFromNSString(NSString *string) {
     }
 }
 
-namespace std {
-    template<typename T>
-    struct hash<vector<T>> {
-        std::size_t operator()(vector<T> const &vec) const {
-            std::hash<T> hasher;
-            size_t size = vec.size();
-            size_t result = 0;
-            
-            for (size_t i = 0; i < size; i++) {
-                result ^= (hasher(vec.at(i)) << i);
-            }
-            
-            return result;
-        }
-    };
-}
-
 @interface ESEmojiToken () {
     std::vector<UChar32> _unicodes;
 }
@@ -90,7 +73,7 @@ namespace std {
     return [emojiTokens autorelease];
 }
 
-+ (NSArray<ESEmojiToken *> *)_emojiTokensFromTextLine:(NSString *)textLine {
++ (NSArray<ESEmojiToken *> *)_emojiTokensFromTextLine:(NSString *)textLine __attribute__((objc_direct)) {
     if ([[textLine stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet] hasPrefix:@"#"]) return nil;
     
     NSArray<NSString *> *components = [textLine componentsSeparatedByString:@";"];
@@ -149,7 +132,7 @@ namespace std {
     return [results autorelease];
 }
 
-+ (NSArray<NSString *> *)_stringsFromTextString:(NSString *)string unicodesOut:(std::vector<std::vector<UChar32>> *)unicodesOut {
++ (NSArray<NSString *> *)_stringsFromTextString:(NSString *)string unicodesOut:(std::vector<std::vector<UChar32>> *)unicodesOut __attribute__((objc_direct)) {
     assert(string.length > 0);
     assert(sizeof(unsigned) == sizeof(UChar32));
     
@@ -224,7 +207,7 @@ namespace std {
     }
 }
 
-+ (NSString *)_stringFromUnicodes:(std::vector<UChar32>)unicodes {
++ (NSString *)_stringFromUnicodes:(std::vector<UChar32>)unicodes __attribute__((objc_direct)) {
     std::vector<unsigned char> chars {};
     
     //
@@ -474,7 +457,7 @@ namespace std {
     return [results autorelease];
 }
 
-- (instancetype)initWithUnicodes:(std::vector<UChar32>)unicodes emojiType:(ESEmojiTokenType)emojiType string:(NSString *)string identifier:(NSString *)identifier {
+- (instancetype)initWithUnicodes:(std::vector<UChar32>)unicodes emojiType:(ESEmojiTokenType)emojiType string:(NSString *)string identifier:(NSString *)identifier __attribute__((objc_direct)) {
     if (self = [super init]) {
         _unicodes = unicodes;
         _emojiType = emojiType;

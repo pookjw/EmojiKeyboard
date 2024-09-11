@@ -10,6 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+__attribute__((objc_direct_members))
 @interface EmojiContentConfiguration : NSObject <UIContentConfiguration>
 @property (retain, nonatomic, readonly, nullable) NSManagedObject *emoji;
 + (instancetype)new NS_UNAVAILABLE;

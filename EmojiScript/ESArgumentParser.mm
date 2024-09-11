@@ -21,7 +21,7 @@
     return [ESArgumentParser URLForFlag:@"--output-store" nilIfDoesNotExist:NO];
 }
 
-+ (NSURL *)URLForFlag:(NSString *)flag nilIfDoesNotExist:(BOOL)nilIfDoesNotExist {
++ (NSURL *)URLForFlag:(NSString *)flag nilIfDoesNotExist:(BOOL)nilIfDoesNotExist __attribute__((objc_direct)) {
     NSProcessInfo *processInfo = [NSProcessInfo processInfo];
     NSArray<NSString *> *arguments = processInfo.arguments;
     NSInteger flagIndex = [arguments indexOfObject:flag];
