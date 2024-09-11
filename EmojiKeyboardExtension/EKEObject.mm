@@ -27,7 +27,7 @@ namespace es_NSProcessInfo {
             struct dl_info info;
             assert(dladdr(addr, &info) != 0);
             
-            if ((std::strcmp(info.dli_fname, "/System/Library/Frameworks/CoreData.framework/Versions/A/CoreData")) && (std::strcmp(info.dli_sname, "+[_PFRoutines valueForProcessArgument:]") == 0)) {
+            if (std::strcmp(info.dli_sname, "+[_PFRoutines valueForProcessArgument:]") == 0) {
                 NSMutableArray<NSString *> *customArguments = [original(self, _cmd) mutableCopy];
                 
                 NSInteger idx = [customArguments indexOfObject:@"-com.apple.CoreData.ConcurrencyDebug"];
