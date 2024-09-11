@@ -42,6 +42,7 @@ __attribute__((objc_direct_members))
 }
 
 - (void)dealloc {
+    [_keyInput release];
     [_collectionView release];
     [_viewModel release];
     [_cellRegistration release];

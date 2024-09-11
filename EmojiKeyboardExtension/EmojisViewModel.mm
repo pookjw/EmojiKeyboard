@@ -131,6 +131,8 @@ __attribute__((objc_direct_members))
     
     if (identifiersOut != nullptr) {
         *identifiersOut = [identifiers autorelease];
+    } else {
+        [identifiers release];
     }
     
     return [emojiStrings autorelease];
