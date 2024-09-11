@@ -16,6 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithDataSource:(UICollectionViewDiffableDataSource<NSString *, NSManagedObjectID *> *)dataSource;
 - (void)loadDataSourceWithCompletionHandler:(void (^)(NSError * _Nullable error))completionHandler;
 - (NSManagedObject *)managedObjectAtIndexPath:(NSIndexPath *)indexPath;
+- (NSArray<NSString *> *)main_childEmojiStringsAtIndexPath:(NSIndexPath *)indexPath identifiersOut:(NSArray<NSString *> * _Nonnull __autoreleasing * _Nullable)identifiersOut;
 @end
 
 NS_ASSUME_NONNULL_END

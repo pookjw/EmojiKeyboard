@@ -8,6 +8,8 @@
 #import "EmojisView.h"
 #import "EmojisViewModel.h"
 #import "EmojiContentConfiguration.h"
+#import <objc/message.h>
+#import <objc/runtime.h>
 
 @interface EmojisView () <UICollectionViewDelegate, UICollectionViewDelegateFlowLayout>
 @property (retain, nonatomic, readonly) UICollectionView *collectionView;
@@ -26,6 +28,10 @@
         collectionView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         [self addSubview:collectionView];
         
+        UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(didTriggerTapGestureRecognizer:)];
+        [collectionView addGestureRecognizer:tapGestureRecognizer];
+        [tapGestureRecognizer release];
+        
         [self.viewModel loadDataSourceWithCompletionHandler:^(NSError * _Nullable error) {
             assert(error == nil);
         }];
@@ -43,6 +49,18 @@
 
 - (CGSize)sizeThatFits:(CGSize)size {
     return CGSizeMake(size.width, 400.);
+}
+
+- (void)didTriggerTapGestureRecognizer:(UITapGestureRecognizer *)sender {
+    UICollectionView *collectionView = self.collectionView;
+    
+    for (UIContextMenuInteraction *contextMenuInteraction in collectionView.interactions) {
+        if (![contextMenuInteraction isKindOfClass:UIContextMenuInteraction.class]) continue;
+        
+        CGPoint location = [sender locationInView:collectionView];
+        reinterpret_cast<void (*)(id, SEL, CGPoint)>(objc_msgSend)(contextMenuInteraction, sel_registerName("_presentMenuAtLocation:"), location);
+        break;
+    }
 }
 
 - (UICollectionView *)collectionView {
@@ -96,6 +114,41 @@
     }];
     
     return dataSource;
+}
+
+- (UIContextMenuConfiguration *)collectionView:(UICollectionView *)collectionView contextMenuConfigurationForItemsAtIndexPaths:(NSArray<NSIndexPath *> *)indexPaths point:(CGPoint)point {
+    NSIndexPath * _Nullable indexPath = indexPaths.firstObject;
+    if (indexPath == nil) return nil;
+    
+    NSArray<NSString *> *childIdentifiers;
+    NSArray<NSString *> *childEmojiStrings = [self.viewModel main_childEmojiStringsAtIndexPath:indexPath identifiersOut:&childIdentifiers];
+    
+    UIContextMenuConfiguration *contextMenuConfiguration = [UIContextMenuConfiguration configurationWithIdentifier:nil
+                                                                                                   previewProvider:^UIViewController * _Nullable{
+        return nil;
+    }
+                                                                                                    actionProvider:^UIMenu * _Nullable(NSArray<UIMenuElement *> * _Nonnull suggestedActions) {
+        NSMutableArray<UIMenuElement *> *actions = [[NSMutableArray alloc] initWithCapacity:childEmojiStrings.count];
+        
+        [childEmojiStrings enumerateObjectsUsingBlock:^(NSString * _Nonnull string, NSUInteger idx, BOOL * _Nonnull stop) {
+            NSString *identifier = childIdentifiers[idx];
+            
+            UIAction *action = [UIAction actionWithTitle:string image:nil identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+                
+            }];
+            
+            action.subtitle = identifier;
+            
+            [actions addObject:action];
+        }];
+        
+        UIMenu *menu = [UIMenu menuWithChildren:actions];
+        [actions release];
+        
+        return menu;
+    }];
+    
+    return contextMenuConfiguration;
 }
 
 @end

@@ -13,6 +13,7 @@
 @interface EmojisViewModel () <NSFetchedResultsControllerDelegate>
 @property (retain, nonatomic, readonly) UICollectionViewDiffableDataSource<NSString *, NSManagedObjectID *> *dataSource;
 @property (retain, nonatomic, nullable) NSManagedObjectContext *managedObjectContext;
+@property (retain, nonatomic, nullable) NSManagedObjectContext *mainManagedObjectContext;
 @property (retain, nonatomic, nullable) NSFetchedResultsController<NSManagedObject *> *fetchedResultsController;
 @end
 
@@ -29,6 +30,7 @@
 - (void)dealloc {
     [_dataSource release];
     [_managedObjectContext release];
+    [_mainManagedObjectContext release];
     [_fetchedResultsController release];
     [super dealloc];
 }
@@ -68,15 +70,21 @@
         
         NSManagedObjectContext *managedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
         managedObjectContext.persistentStoreCoordinator = persistentStoreCoordinator;
+        
+        NSManagedObjectContext *mainManagedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
+        mainManagedObjectContext.parentContext = managedObjectContext;
+        
         NSFetchRequest<NSManagedObject *> *fetchRequest = [[NSFetchRequest alloc] initWithEntityName:@"Emoji"];
         fetchRequest.sortDescriptors = @[];
-        fetchRequest.predicate = nil;
+        fetchRequest.predicate = [NSPredicate predicateWithFormat:@"%K == NULL" argumentArray:@[@"parentEmoji"]];
         
         NSFetchedResultsController *fetchedResultsController = [[NSFetchedResultsController alloc] initWithFetchRequest:fetchRequest managedObjectContext:managedObjectContext sectionNameKeyPath:nil cacheName:nil];
         [fetchRequest release];
         fetchedResultsController.delegate = self;
         
         self.managedObjectContext = managedObjectContext;
+        self.mainManagedObjectContext = mainManagedObjectContext;
+        [mainManagedObjectContext release];
         self.fetchedResultsController = fetchedResultsController;
         
         [managedObjectContext performBlock:^{
@@ -90,6 +98,28 @@
     }];
     
     [storeDescription release];
+}
+
+- (NSArray<NSString *> *)main_childEmojiStringsAtIndexPath:(NSIndexPath *)indexPath identifiersOut:(NSArray<NSString *> * _Nonnull *)identifiersOut {
+    NSManagedObjectID *managedObjectID = [_fetchedResultsController objectAtIndexPath:indexPath].objectID;
+    NSManagedObject *managedObject = [_mainManagedObjectContext objectWithID:managedObjectID];
+    NSSet<NSManagedObject *> *childEmojis = [managedObject valueForKey:@"childEmojis"];
+    
+    NSMutableArray<NSString *> *emojiStrings = [[NSMutableArray alloc] initWithCapacity:childEmojis.count];
+    NSMutableArray<NSString *> *identifiers = [[NSMutableArray alloc] initWithCapacity:childEmojis.count];
+    
+    for (NSManagedObject *childEmoji in childEmojis) {
+        NSString *string = [childEmoji valueForKey:@"string"];
+        NSString *identifier = [childEmoji valueForKey:@"identifier"];
+        [emojiStrings addObject:string];
+        [identifiers addObject:identifier];
+    }
+    
+    if (identifiersOut != nullptr) {
+        *identifiersOut = [identifiers autorelease];
+    }
+    
+    return [emojiStrings autorelease];
 }
 
 - (NSManagedObject *)managedObjectAtIndexPath:(NSIndexPath *)indexPath {

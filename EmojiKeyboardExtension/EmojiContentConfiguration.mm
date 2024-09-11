@@ -28,6 +28,15 @@
     [super dealloc];
 }
 
+- (BOOL)isEqual:(id)other {
+    if (other == self) {
+        return YES;
+    } else {
+        auto casted = static_cast<EmojiContentConfiguration *>(other);
+        return [_emoji isEqual:casted->_emoji];
+    }
+}
+
 - (id)copyWithZone:(struct _NSZone *)zone {
     id copy = [[[self class] allocWithZone:zone] init];
     

@@ -47,10 +47,32 @@
 }
 
 - (void)setContentConfiguration:(EmojiContentConfiguration *)contentConfiguration {
+    if ([_contentConfiguration isEqual:contentConfiguration]) return;
+    
     [_contentConfiguration release];
     _contentConfiguration = [contentConfiguration copy];
     
-    self.label.text = static_cast<NSString *>([contentConfiguration.emoji valueForKey:@"string"]);
+    UILabel *label = self.label;
+    label.text = nil;
+    label.alpha = 0.;
+    
+    NSManagedObject *emoji = contentConfiguration.emoji;
+    __weak auto weakSelf = self;
+    
+    [emoji.managedObjectContext performBlock:^{
+        auto string = static_cast<NSString *>([emoji valueForKey:@"string"]);
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            auto loaded = weakSelf;
+            if (loaded == nil) return;
+            
+            if (![loaded.contentConfiguration isEqual:contentConfiguration]) return;
+            label.text = string;
+            [UIView animateWithDuration:0.1 animations:^{
+                label.alpha = 1.;
+            }];
+        });
+    }];
 }
 
 - (UILabel *)label {
