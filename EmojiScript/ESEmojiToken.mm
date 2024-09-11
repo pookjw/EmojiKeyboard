@@ -259,6 +259,7 @@ namespace std {
 
 + (NSDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> *)emojiTokenReferencesFromEmojiTokens:(NSArray<ESEmojiToken *> *)emojiTokens {
     NSMutableDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> * results = [NSMutableDictionary new];
+    NSMutableArray<ESEmojiToken *> *remainingEmojiTokens = [emojiTokens mutableCopy];
     
     [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull emojiToken, NSUInteger emojiTokenIdx, BOOL * _Nonnull stop) {
         switch (emojiToken.emojiType) {
@@ -281,12 +282,15 @@ namespace std {
                         if (otherEmojiToken.unicodes[0] != baseUnicode) return;
                         
                         [references addObject:otherEmojiToken];
+                        [remainingEmojiTokens removeObject:otherEmojiToken];
                     }];
                     
                     results[emojiToken] = references;
+                    [remainingEmojiTokens removeObject:emojiToken];
                     [references release];
                 } else {
                     results[emojiToken] = @[];
+                    [remainingEmojiTokens removeObject:emojiToken];
                 }
                 break;
             }
@@ -294,6 +298,7 @@ namespace std {
             case ESEmojiTokenTagSequence:
             case ESEmojiTokenFlagSequence: {
                 results[emojiToken] = @[];
+                [remainingEmojiTokens removeObject:emojiToken];
                 break;
             }
             case ESEmojiTokenZWJSequence: {
@@ -378,6 +383,7 @@ namespace std {
             }
             
             [references addObject:otherEmojiToken];
+            [remainingEmojiTokens removeObject:otherEmojiToken];
         }];
         
         if (references.count == 0) {
@@ -434,6 +440,7 @@ namespace std {
                 if (hasParentInNonZWJ) {
                     NSMutableArray *newArray = [results[keyEmojiToken] mutableCopy];
                     [newArray addObject:emojiToken];
+                    [remainingEmojiTokens removeObject:emojiToken];
                     results[keyEmojiToken] = newArray;
                     [newArray release];
                     hasParentInNonZWJ = YES;
@@ -446,8 +453,21 @@ namespace std {
         }
         
         results[emojiToken] = references;
+        [remainingEmojiTokens removeObject:emojiToken];
         [references release];
     }];
+    
+    //
+    
+    if (remainingEmojiTokens.count) {
+        for (ESEmojiToken *remainingEmojiToken in remainingEmojiTokens) {
+            results[remainingEmojiToken] = @[];
+        }
+        
+        NSLog(@"Uncategorized emojis count: %ld", remainingEmojiTokens.count);
+    }
+    
+    [remainingEmojiTokens release];
     
     //
     
