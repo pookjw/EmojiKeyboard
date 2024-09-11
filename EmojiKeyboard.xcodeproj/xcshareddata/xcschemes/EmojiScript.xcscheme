@@ -57,6 +57,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--output-store /Users/pookjw/git/EmojiKeyboard/EmojiKeyboardExtension/Resources/container.sqlite"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--zwj-sequences-txt /Users/pookjw/Desktop/emoji-zwj-sequences.txt"
             isEnabled = "YES">
          </CommandLineArgument>

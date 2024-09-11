@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		4F0DC4022C8C18D200A6AA2B /* EmojiKeyboardExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4F0DC3FA2C8C18D200A6AA2B /* EmojiKeyboardExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4F0DC4392C8C363400A6AA2B /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F0DC4382C8C363400A6AA2B /* CoreData.framework */; };
+		4FCA34432C918EB3007CEC69 /* libEmojiDataLibrary.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4FCA343A2C918EAC007CEC69 /* libEmojiDataLibrary.a */; };
+		4FCA34462C918EBD007CEC69 /* libEmojiDataLibrary.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4FCA343A2C918EAC007CEC69 /* libEmojiDataLibrary.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -18,6 +20,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = 4F0DC3F92C8C18D200A6AA2B;
 			remoteInfo = EmojiKeyboardExtension;
+		};
+		4FCA34442C918EB3007CEC69 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F0DC3D02C8C18BD00A6AA2B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4FCA34392C918EAC007CEC69;
+			remoteInfo = EmojiDataLibrary;
+		};
+		4FCA34472C918EBD007CEC69 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F0DC3D02C8C18BD00A6AA2B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4FCA34392C918EAC007CEC69;
+			remoteInfo = EmojiDataLibrary;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -49,6 +65,7 @@
 		4F0DC3FA2C8C18D200A6AA2B /* EmojiKeyboardExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = EmojiKeyboardExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F0DC4302C8C362900A6AA2B /* EmojiScript */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = EmojiScript; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F0DC4382C8C363400A6AA2B /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.1.sdk/System/Library/Frameworks/CoreData.framework; sourceTree = DEVELOPER_DIR; };
+		4FCA343A2C918EAC007CEC69 /* libEmojiDataLibrary.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libEmojiDataLibrary.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -102,6 +119,11 @@
 			path = EmojiScript;
 			sourceTree = "<group>";
 		};
+		4FCA343B2C918EAC007CEC69 /* EmojiDataLibrary */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = EmojiDataLibrary;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,6 +138,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FCA34462C918EBD007CEC69 /* libEmojiDataLibrary.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -123,7 +146,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FCA34432C918EB3007CEC69 /* libEmojiDataLibrary.a in Frameworks */,
 				4F0DC4392C8C363400A6AA2B /* CoreData.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4FCA34382C918EAC007CEC69 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -136,6 +167,7 @@
 				4F0DC3DA2C8C18BD00A6AA2B /* EmojiKeyboard */,
 				4F0DC3FB2C8C18D200A6AA2B /* EmojiKeyboardExtension */,
 				4F0DC4312C8C362900A6AA2B /* EmojiScript */,
+				4FCA343B2C918EAC007CEC69 /* EmojiDataLibrary */,
 				4F0DC4372C8C363400A6AA2B /* Frameworks */,
 				4F0DC3D92C8C18BD00A6AA2B /* Products */,
 			);
@@ -147,6 +179,7 @@
 				4F0DC3D82C8C18BD00A6AA2B /* EmojiKeyboard.app */,
 				4F0DC3FA2C8C18D200A6AA2B /* EmojiKeyboardExtension.appex */,
 				4F0DC4302C8C362900A6AA2B /* EmojiScript */,
+				4FCA343A2C918EAC007CEC69 /* libEmojiDataLibrary.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -160,6 +193,16 @@
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		4FCA34362C918EAC007CEC69 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		4F0DC3D72C8C18BD00A6AA2B /* EmojiKeyboard */ = {
@@ -197,6 +240,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				4FCA34482C918EBD007CEC69 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4F0DC3FB2C8C18D200A6AA2B /* EmojiKeyboardExtension */,
@@ -219,6 +263,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				4FCA34452C918EB3007CEC69 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4F0DC4312C8C362900A6AA2B /* EmojiScript */,
@@ -229,6 +274,28 @@
 			productName = EmojiScript;
 			productReference = 4F0DC4302C8C362900A6AA2B /* EmojiScript */;
 			productType = "com.apple.product-type.tool";
+		};
+		4FCA34392C918EAC007CEC69 /* EmojiDataLibrary */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4FCA34422C918EAC007CEC69 /* Build configuration list for PBXNativeTarget "EmojiDataLibrary" */;
+			buildPhases = (
+				4FCA34362C918EAC007CEC69 /* Headers */,
+				4FCA34372C918EAC007CEC69 /* Sources */,
+				4FCA34382C918EAC007CEC69 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4FCA343B2C918EAC007CEC69 /* EmojiDataLibrary */,
+			);
+			name = EmojiDataLibrary;
+			packageProductDependencies = (
+			);
+			productName = EmojiDataLibrary;
+			productReference = 4FCA343A2C918EAC007CEC69 /* libEmojiDataLibrary.a */;
+			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
 
@@ -246,6 +313,9 @@
 						CreatedOnToolsVersion = 16.1;
 					};
 					4F0DC42F2C8C362900A6AA2B = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					4FCA34392C918EAC007CEC69 = {
 						CreatedOnToolsVersion = 16.1;
 					};
 				};
@@ -267,6 +337,7 @@
 				4F0DC3D72C8C18BD00A6AA2B /* EmojiKeyboard */,
 				4F0DC3F92C8C18D200A6AA2B /* EmojiKeyboardExtension */,
 				4F0DC42F2C8C362900A6AA2B /* EmojiScript */,
+				4FCA34392C918EAC007CEC69 /* EmojiDataLibrary */,
 			);
 		};
 /* End PBXProject section */
@@ -310,6 +381,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4FCA34372C918EAC007CEC69 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -317,6 +395,16 @@
 			isa = PBXTargetDependency;
 			target = 4F0DC3F92C8C18D200A6AA2B /* EmojiKeyboardExtension */;
 			targetProxy = 4F0DC4002C8C18D200A6AA2B /* PBXContainerItemProxy */;
+		};
+		4FCA34452C918EB3007CEC69 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4FCA34392C918EAC007CEC69 /* EmojiDataLibrary */;
+			targetProxy = 4FCA34442C918EB3007CEC69 /* PBXContainerItemProxy */;
+		};
+		4FCA34482C918EBD007CEC69 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4FCA34392C918EAC007CEC69 /* EmojiDataLibrary */;
+			targetProxy = 4FCA34472C918EBD007CEC69 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -545,6 +633,7 @@
 				DEVELOPMENT_TEAM = P53D29U9LJ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.pookjw.EmojiScript;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -559,9 +648,38 @@
 				DEVELOPMENT_TEAM = P53D29U9LJ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.pookjw.EmojiScript;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		4FCA34402C918EAC007CEC69 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++23";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = P53D29U9LJ;
+				EXECUTABLE_PREFIX = lib;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		4FCA34412C918EAC007CEC69 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++23";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = P53D29U9LJ;
+				EXECUTABLE_PREFIX = lib;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
@@ -600,6 +718,15 @@
 			buildConfigurations = (
 				4F0DC4352C8C362900A6AA2B /* Debug */,
 				4F0DC4362C8C362900A6AA2B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4FCA34422C918EAC007CEC69 /* Build configuration list for PBXNativeTarget "EmojiDataLibrary" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4FCA34402C918EAC007CEC69 /* Debug */,
+				4FCA34412C918EAC007CEC69 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

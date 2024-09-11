@@ -12,6 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface ESArgumentParser : NSObject
 @property (class, nonatomic, readonly, nullable) NSURL *emojiSequencesURL;
 @property (class, nonatomic, readonly, nullable) NSURL *emojiZWJSequencesURL;
+@property (class, nonatomic, readonly, nullable) NSURL *outputStoreURL;
 @property (class, nonatomic, readonly) NSString *helpMessage;
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)init NS_UNAVAILABLE;
