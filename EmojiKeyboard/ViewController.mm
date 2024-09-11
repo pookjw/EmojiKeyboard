@@ -1,5 +1,5 @@
 //
-//  ViewController.m
+//  ViewController.mm
 //  EmojiKeyboard
 //
 //  Created by Jinwoo Kim on 9/7/24.
@@ -9,6 +9,10 @@
 
 @implementation ViewController
 
+- (NSString *)textInputContextIdentifier {
+    return @"ABC";
+}
+
 - (void)loadView {
     UITextView *textView = [UITextView new];
     textView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentAlways;
@@ -16,8 +20,8 @@
     [textView release];
 }
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
     [self.view becomeFirstResponder];
 }
 
