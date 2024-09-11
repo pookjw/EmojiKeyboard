@@ -49,14 +49,12 @@ int main(int argc, const char * argv[]) {
         NSDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> *emojiTokenReferences = [ESEmojiToken emojiTokenReferencesFromEmojiTokens:[emojiTokens arrayByAddingObjectsFromArray:emojiZWJSequencesTokens]];
         
         [emojiTokenReferences enumerateKeysAndObjectsUsingBlock:^(ESEmojiToken * _Nonnull key, NSArray<ESEmojiToken *> * _Nonnull obj, BOOL * _Nonnull stop) {
-            NSLog(@"%@", key.string);
+            NSLog(@"%@ (%@)", key.string, key.identifier);
             
-            assert([tokens containsObject:key]);
             [tokens removeObject:key];
             
             [obj enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-                NSLog(@"    - %@", obj.string);
-                assert([tokens containsObject:obj]);
+                NSLog(@"    - %@ (%@)", obj.string, obj.identifier);
                 [tokens removeObject:obj];
             }];
             

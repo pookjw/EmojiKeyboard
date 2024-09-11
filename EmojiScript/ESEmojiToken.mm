@@ -111,16 +111,40 @@ namespace std {
     
     NSMutableString *identifier = [[components[2] componentsSeparatedByString:@"#"][0] mutableCopy];
     
-    // TODO
+    __block NSInteger identifierEndIndex = NSNotFound;
+    [identifier enumerateSubstringsInRange:NSMakeRange(0, identifier.length) options:NSStringEnumerationByComposedCharacterSequences | NSStringEnumerationReverse usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+        if (![substring isEqualToString:@" "]) {
+            identifierEndIndex = substringRange.location;
+            *stop = YES;
+        }
+    }];
+    
+    if ((identifierEndIndex != NSNotFound) && (identifierEndIndex + 1 < identifier.length)) {
+        [identifier deleteCharactersInRange:NSMakeRange(identifierEndIndex + 1, identifier.length - identifierEndIndex - 1)];
+    }
+    
+    // whitespaces 제거
+    __block NSInteger identifierStartIndex = NSNotFound;
+    [identifier enumerateSubstringsInRange:NSMakeRange(0, identifier.length) options:NSStringEnumerationByComposedCharacterSequences usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+        if (![substring isEqualToString:@" "]) {
+            identifierStartIndex = substringRange.location;
+            *stop = YES;
+        }
+    }];
+    
+    if ((identifierStartIndex != NSNotFound) && (identifierStartIndex > 0)) {
+        [identifier deleteCharactersInRange:NSMakeRange(0, identifierStartIndex)];
+    }
     
     //
     
     NSMutableArray<ESEmojiToken *> *results = [[NSMutableArray alloc] initWithCapacity:strings.count];
     [strings enumerateObjectsUsingBlock:^(NSString * _Nonnull string, NSUInteger idx, BOOL * _Nonnull stop) {
-        ESEmojiToken *emojiToken = [[ESEmojiToken alloc] initWithUnicodes:unicodes[idx] emojiType:emojiType string:string];
+        ESEmojiToken *emojiToken = [[ESEmojiToken alloc] initWithUnicodes:unicodes[idx] emojiType:emojiType string:string identifier:identifier];
         [results addObject:emojiToken];
         [emojiToken release];
     }];
+    [identifier release];
     
     return [results autorelease];
 }
@@ -253,32 +277,26 @@ namespace std {
                     
                     [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull otherEmojiToken, NSUInteger otherEmojiTokenIdx, BOOL * _Nonnull stop) {
                         if (emojiTokenIdx == otherEmojiTokenIdx) return;
+                        if (otherEmojiToken.emojiType != ESEmojiTokenModifierSequence) return;
+                        if (otherEmojiToken.unicodes[0] != baseUnicode) return;
                         
-                        switch (otherEmojiToken.emojiType) {
-                            case ESEmojiTokenModifierSequence: {
-                                if (otherEmojiToken.unicodes[0] == baseUnicode) {
-                                    [references addObject:otherEmojiToken];
-                                }
-                                break;
+                        [references addObject:otherEmojiToken];
+                        
+                        // 🤝 -> 🤝🏻, 🫱🏼‍🫲🏻 / 🫱🏼‍🫲🏾
+                        // 'handshake: light skin tone, medium-light skin tone' -> 'handshake'
+                        [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull anotherEmojiToken, NSUInteger anotherEmojiTokenIdx, BOOL * _Nonnull stop) {
+                            if (emojiTokenIdx == anotherEmojiTokenIdx) return;
+                            if (otherEmojiTokenIdx == anotherEmojiTokenIdx) return;
+                            if (anotherEmojiToken.emojiType != ESEmojiTokenZMJSequence) return;
+                            
+                            // 'handshake: light skin tone, medium-light skin tone' -> 'handshake'
+                            NSString *otherEmojiTokenIdentifierPrefix = [otherEmojiToken.identifier componentsSeparatedByString:@":"][0];
+                            NSString *anotherEmojiTokenIdentifierPrefix = [anotherEmojiToken.identifier componentsSeparatedByString:@":"][0];
+                            
+                            if ([otherEmojiTokenIdentifierPrefix isEqualToString:anotherEmojiTokenIdentifierPrefix]) {
+                                [references addObject:anotherEmojiToken];
                             }
-                            case ESEmojiTokenZMJSequence: {
-                                // TODO: Key로 찾기
-//                                if (baseUnicode == 0x1F91D && otherEmojiToken.unicodes[0] == 0x1FAF1) {
-//                                    // 🤝 -> 🫱🏼‍🫲🏻 / 🫱🏼‍🫲🏾
-//                                    [references addObject:otherEmojiToken];
-//                                } else if (baseUnicode == 0x1F46C &&
-//                                           (std::accumulate(otherEmojiToken->_unicodes.cbegin(), otherEmojiToken->_unicodes.cend(), 0, [](size_t num, const UChar32 &unicode) {
-//                                    return num + (unicode == 0x1F468);
-//                                }) == 2) &&
-//                                           otherEmojiToken->_unicodes.con) {
-//                                    // 👬 -> 👨🏻‍🤝‍👨🏼, 👨🏻‍🤝‍👨🏾
-//                                    [references addObject:otherEmojiToken];
-//                                }
-                                break;
-                            }
-                            default:
-                                break;
-                        }
+                        }];
                     }];
                     
                     result[emojiToken] = references;
@@ -380,10 +398,6 @@ namespace std {
         }
     }];
     
-    /*
-     1FAF1 1F3FD 200D 1FAF2 1F3FB
-     */
-    
     return [result autorelease];
 }
 
@@ -405,7 +419,7 @@ namespace std {
 }
 
 - (NSString *)description {
-    return [NSString stringWithFormat:@"%@(string: %@)", [super description], _string];
+    return [NSString stringWithFormat:@"%@ %@ (%@)", [super description], _string, _identifier];
 }
 
 - (BOOL)isEqual:(id)other {
@@ -413,7 +427,7 @@ namespace std {
         return YES;
     } else {
         auto casted = static_cast<ESEmojiToken *>(other);
-        return /*_unicodes == casted->_unicodes &&*/ _emojiType == casted->_emojiType && [_string isEqualToString:casted->_string] && [_identifier isEqualToString:casted->_identifier];
+        return _emojiType == casted->_emojiType && [_string isEqualToString:casted->_string] && [_identifier isEqualToString:casted->_identifier];
     }
 }
 
@@ -421,15 +435,8 @@ namespace std {
     NSUInteger hash = 0;
     
     hash ^= _emojiType;
-
-    NSData *data = [_string dataUsingEncoding:NSUTF32StringEncoding];
-    const uint32_t *unicodeScalars = (const uint32_t *)data.bytes;
-    NSUInteger length = data.length / sizeof(uint32_t);
-
-    for (NSUInteger i = 0; i < length; i++) {
-        uint32_t codepoint = unicodeScalars[i];
-        hash = hash * 31 + codepoint;
-    }
+    hash ^= _identifier.hash;
+    hash ^= _string.hash;
 
     return hash;
 }
