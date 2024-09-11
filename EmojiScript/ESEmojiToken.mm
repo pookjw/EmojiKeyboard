@@ -25,7 +25,7 @@ NSString * NSStringFromESEmojiTokenType(ESEmojiTokenType emojiType) {
             return @"RGI_Emoji_Tag_Sequence";
         case ESEmojiTokenModifierSequence:
             return @"RGI_Emoji_Modifier_Sequence";
-        case ESEmojiTokenZMJSequence:
+        case ESEmojiTokenZWJSequence:
             return @"RGI_Emoji_ZWJ_Sequence";
         default:
             return nil;
@@ -44,7 +44,7 @@ ESEmojiTokenType ESEmojiTokenTypeFromNSString(NSString *string) {
     } else if ([string isEqualToString:@"RGI_Emoji_Modifier_Sequence"]) {
         return ESEmojiTokenModifierSequence;
     } else if ([string isEqualToString:@"RGI_Emoji_ZWJ_Sequence"]) {
-        return ESEmojiTokenZMJSequence;
+        return ESEmojiTokenZWJSequence;
     } else {
         abort();
     }
@@ -258,7 +258,7 @@ namespace std {
 }
 
 + (NSDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> *)emojiTokenReferencesFromEmojiTokens:(NSArray<ESEmojiToken *> *)emojiTokens {
-    NSMutableDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> * result = [NSMutableDictionary new];
+    NSMutableDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> * results = [NSMutableDictionary new];
     
     [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull emojiToken, NSUInteger emojiTokenIdx, BOOL * _Nonnull stop) {
         switch (emojiToken.emojiType) {
@@ -281,114 +281,22 @@ namespace std {
                         if (otherEmojiToken.unicodes[0] != baseUnicode) return;
                         
                         [references addObject:otherEmojiToken];
-                        
-                        // 🤝 -> 🤝🏻, 🫱🏼‍🫲🏻 / 🫱🏼‍🫲🏾
-                        // 'handshake: light skin tone, medium-light skin tone' -> 'handshake'
-                        [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull anotherEmojiToken, NSUInteger anotherEmojiTokenIdx, BOOL * _Nonnull stop) {
-                            if (emojiTokenIdx == anotherEmojiTokenIdx) return;
-                            if (otherEmojiTokenIdx == anotherEmojiTokenIdx) return;
-                            if (anotherEmojiToken.emojiType != ESEmojiTokenZMJSequence) return;
-                            
-                            // 'handshake: light skin tone, medium-light skin tone' -> 'handshake'
-                            NSString *otherEmojiTokenIdentifierPrefix = [otherEmojiToken.identifier componentsSeparatedByString:@":"][0];
-                            NSString *anotherEmojiTokenIdentifierPrefix = [anotherEmojiToken.identifier componentsSeparatedByString:@":"][0];
-                            
-                            if ([otherEmojiTokenIdentifierPrefix isEqualToString:anotherEmojiTokenIdentifierPrefix]) {
-                                [references addObject:anotherEmojiToken];
-                            }
-                        }];
                     }];
                     
-                    result[emojiToken] = references;
+                    results[emojiToken] = references;
                     [references release];
                 } else {
-                    result[emojiToken] = @[];
+                    results[emojiToken] = @[];
                 }
                 break;
             }
             case ESEmojiTokenKeycapSequence:
             case ESEmojiTokenTagSequence:
             case ESEmojiTokenFlagSequence: {
-                result[emojiToken] = @[];
+                results[emojiToken] = @[];
                 break;
             }
-            case ESEmojiTokenZMJSequence: {
-                NSMutableArray<ESEmojiToken *> *references = [NSMutableArray new];
-                
-                //
-                
-                auto unicodesByZWJ = emojiToken.unicodes
-                /*
-                 1F3CB FE0F 200D 2640 FE0F (Base)
-                 1F3CB 1F3FD 200D 2640 FE0F
-                 1F3CB 1F3FE 200D 2640 FE0F
-                 */
-                | std::views::filter([](UChar32 unicode) { return unicode != 0xFE0F; })
-                | std::views::split(0x200D)
-                | std::views::transform([](auto &&subrange) {
-                    return std::vector<int>(subrange.begin(), subrange.end());
-                })
-                | std::ranges::to<std::vector<std::vector<UChar32>>>();
-                
-                //
-                
-                [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull otherEmojiToken, NSUInteger otherEmojiTokenIdx, BOOL * _Nonnull stop) {
-                    if (emojiTokenIdx == otherEmojiTokenIdx) return;
-                    if (otherEmojiToken.emojiType != ESEmojiTokenZMJSequence) return;
-                    
-                    //
-                    
-                    auto otherUnicodesByZWJ = otherEmojiToken.unicodes
-                    | std::views::filter([](UChar32 unicode) { return unicode != 0xFE0F; })
-                    | std::views::split(0x200D)
-                    | std::views::transform([](auto &&subrange) {
-                        return std::vector<int>(subrange.begin(), subrange.end());
-                    })
-                    | std::ranges::to<std::vector<std::vector<UChar32>>>();
-                    
-                    //
-                    
-                    /*
-                     1F9D8 200D 2640 FE0F (Base)
-                     1F9D8 1F3FD 200D 2640 FE0F
-                     1F9D8 1F3FB 200D 2640 FE0F
-                     마지막 둘끼리 비교할 때는 무시해야함
-                     */
-                    if (
-                        std::accumulate(otherUnicodesByZWJ.cbegin(), otherUnicodesByZWJ.cend(), 0, [](size_t sum, const std::vector<UChar32>& v) {
-                            return sum + v.size();
-                        })
-                        <=
-                        std::accumulate(unicodesByZWJ.cbegin(), unicodesByZWJ.cend(), 0, [](size_t sum, const std::vector<UChar32>& v) {
-                            return sum + v.size();
-                        })
-                        )
-                    {
-                        return;
-                    }
-                    
-                    //
-                    
-                    if (unicodesByZWJ.size() != otherUnicodesByZWJ.size()) return;
-                    
-                    for (size_t idx = 0; idx < unicodesByZWJ.size(); idx++) {
-                        std::vector<UChar32> unicodes = unicodesByZWJ[idx];
-                        std::vector<UChar32> otherUnicodes = otherUnicodesByZWJ[idx];
-                        
-                        if (otherUnicodes.size() < unicodes.size()) return;
-                        if (unicodes[0] != otherUnicodes[0]) return;
-                    }
-                    
-                    [references addObject:otherEmojiToken];
-                }];
-                
-                if (references.count == 0) {
-                    [references release];
-                    return;
-                }
-                
-                result[emojiToken] = references;
-                [references release];
+            case ESEmojiTokenZWJSequence: {
                 break;
             }
             default:
@@ -398,7 +306,152 @@ namespace std {
         }
     }];
     
-    return [result autorelease];
+    //
+    
+    [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull emojiToken, NSUInteger emojiTokenIdx, BOOL * _Nonnull stop) {
+        if (emojiToken.emojiType != ESEmojiTokenZWJSequence) return;
+        
+        NSMutableArray<ESEmojiToken *> *references = [NSMutableArray new];
+        
+        //
+        
+        auto unicodesByZWJ = emojiToken.unicodes
+        /*
+         1F3CB FE0F 200D 2640 FE0F (Base)
+         1F3CB 1F3FD 200D 2640 FE0F
+         1F3CB 1F3FE 200D 2640 FE0F
+         */
+        | std::views::filter([](UChar32 unicode) { return unicode != 0xFE0F; })
+        | std::views::split(0x200D)
+        | std::views::transform([](auto &&subrange) {
+            return std::vector<int>(subrange.begin(), subrange.end());
+        })
+        | std::ranges::to<std::vector<std::vector<UChar32>>>();
+        
+        //
+        
+        [emojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull otherEmojiToken, NSUInteger otherEmojiTokenIdx, BOOL * _Nonnull stop) {
+            if (emojiTokenIdx == otherEmojiTokenIdx) return;
+            if (otherEmojiToken.emojiType != ESEmojiTokenZWJSequence) return;
+            
+            //
+            
+            auto otherUnicodesByZWJ = otherEmojiToken.unicodes
+            | std::views::filter([](UChar32 unicode) { return unicode != 0xFE0F; })
+            | std::views::split(0x200D)
+            | std::views::transform([](auto &&subrange) {
+                return std::vector<int>(subrange.begin(), subrange.end());
+            })
+            | std::ranges::to<std::vector<std::vector<UChar32>>>();
+            
+            //
+            
+            /*
+             1F9D8 200D 2640 FE0F (Base)
+             1F9D8 1F3FD 200D 2640 FE0F
+             1F9D8 1F3FB 200D 2640 FE0F
+             마지막 둘끼리 비교할 때는 무시해야함
+             */
+            if (
+                std::accumulate(otherUnicodesByZWJ.cbegin(), otherUnicodesByZWJ.cend(), 0, [](size_t sum, const std::vector<UChar32>& v) {
+                    return sum + v.size();
+                })
+                <=
+                std::accumulate(unicodesByZWJ.cbegin(), unicodesByZWJ.cend(), 0, [](size_t sum, const std::vector<UChar32>& v) {
+                    return sum + v.size();
+                })
+                )
+            {
+                return;
+            }
+            
+            //
+            
+            if (unicodesByZWJ.size() != otherUnicodesByZWJ.size()) return;
+            
+            for (size_t idx = 0; idx < unicodesByZWJ.size(); idx++) {
+                std::vector<UChar32> unicodes = unicodesByZWJ[idx];
+                std::vector<UChar32> otherUnicodes = otherUnicodesByZWJ[idx];
+                
+                if (otherUnicodes.size() < unicodes.size()) return;
+                if (unicodes[0] != otherUnicodes[0]) return;
+            }
+            
+            [references addObject:otherEmojiToken];
+        }];
+        
+        if (references.count == 0) {
+            /*
+             예를 들어
+             
+             👩‍❤️‍💋‍👨 (kiss; kiss: woman, man), isZWJ: 1
+                 - 👩🏻‍❤️‍💋‍👨🏻 (kiss; kiss: woman, man, light skin tone): 1
+                 - 👩🏻‍❤️‍💋‍👨🏼 (kiss; kiss: woman, man, light skin tone, medium-light skin tone): 1
+                 - 👩🏻‍❤️‍💋‍👨🏽 (kiss; kiss: woman, man, light skin tone, medium skin tone): 1
+                 - 👩🏻‍❤️‍💋‍👨🏾 (kiss; kiss: woman, man, light skin tone, medium-dark skin tone): 1
+                 - 👩🏻‍❤️‍💋‍👨🏿 (kiss; kiss: woman, man, light skin tone, dark skin tone): 1
+             
+             이미 이렇게 분류가 되었는데 아래에 중복으로 속하지 않게 하기 위함 
+             
+             💏 (police officer..speech balloon; police officer..speech balloon), isZWJ: 0
+                 - 💏🏻 (kiss; kiss: light skin tone): 0
+                 - 💏🏼 (kiss; kiss: medium-light skin tone): 0
+                 - 💏🏽 (kiss; kiss: medium skin tone): 0
+                 - 💏🏾 (kiss; kiss: medium-dark skin tone): 0
+                 - 💏🏿 (kiss; kiss: dark skin tone): 0
+             */
+            for (ESEmojiToken *addedEmojiToken in results) {
+                if (addedEmojiToken.emojiType != ESEmojiTokenZWJSequence) continue;
+                
+                if ([results[addedEmojiToken] containsObject:emojiToken]) {
+                    [references release];
+                    return;
+                }
+            }
+            
+            
+            // 🤝 (non-ZWJ) -> 🤝🏻 (non-ZWJ), 🫱🏼‍🫲🏻 (ZWJ), 🫱🏼‍🫲🏾 (ZWJ)
+            // 'handshake' (non-ZWJ) -> 'handshake: light skin tone, medium-light skin tone' (ZWJ)
+            [results enumerateKeysAndObjectsUsingBlock:^(ESEmojiToken * _Nonnull keyEmojiToken, NSArray<ESEmojiToken *> * _Nonnull addedEmojiTokens, BOOL * _Nonnull stop) {
+                if (keyEmojiToken.emojiType == ESEmojiTokenZWJSequence) return;
+                
+                __block BOOL hasParentInNonZWJ = NO;
+                
+                if ([emojiToken.trimmedIdentifier isEqualToString:keyEmojiToken.trimmedIdentifier]) {
+                    hasParentInNonZWJ = YES;
+                } else {
+                    [addedEmojiTokens enumerateObjectsUsingBlock:^(ESEmojiToken * _Nonnull addedEmojiToken, NSUInteger idx, BOOL * _Nonnull stop) {
+                        if (addedEmojiToken.emojiType == ESEmojiTokenZWJSequence) return;
+                        
+                        // TODO: kiss: woman, man, light skin tone와 kiss: woman, man, medium-light skin tone, light skin tone는 다른 분류가 되어야 함
+                        if ([emojiToken.trimmedIdentifier isEqualToString:addedEmojiToken.trimmedIdentifier]) {
+                            hasParentInNonZWJ = YES;
+                            *stop = YES;
+                        }
+                    }];
+                }
+                
+                if (hasParentInNonZWJ) {
+                    NSMutableArray *newArray = [results[keyEmojiToken] mutableCopy];
+                    [newArray addObject:emojiToken];
+                    results[keyEmojiToken] = newArray;
+                    [newArray release];
+                    hasParentInNonZWJ = YES;
+                    *stop = YES;
+                }
+            }];
+            
+            [references release];
+            return;
+        }
+        
+        results[emojiToken] = references;
+        [references release];
+    }];
+    
+    //
+    
+    return [results autorelease];
 }
 
 - (instancetype)initWithUnicodes:(std::vector<UChar32>)unicodes emojiType:(ESEmojiTokenType)emojiType string:(NSString *)string identifier:(NSString *)identifier {
@@ -407,6 +460,7 @@ namespace std {
         _emojiType = emojiType;
         _string = [string copy];
         _identifier = [identifier copy];
+        _trimmedIdentifier = [[identifier componentsSeparatedByString:@":"].firstObject copy];
     }
     
     return self;
@@ -415,11 +469,12 @@ namespace std {
 - (void)dealloc {
     [_string release];
     [_identifier release];
+    [_trimmedIdentifier release];
     [super dealloc];
 }
 
 - (NSString *)description {
-    return [NSString stringWithFormat:@"%@ %@ (%@)", [super description], _string, _identifier];
+    return [NSString stringWithFormat:@"%@ %@ (%@; %@), isZWJ: %d", [super description], _string, _trimmedIdentifier, _identifier, _emojiType == ESEmojiTokenZWJSequence];
 }
 
 - (BOOL)isEqual:(id)other {
@@ -449,6 +504,7 @@ namespace std {
         casted->_unicodes = _unicodes;
         casted->_string = [_string copy];
         casted->_identifier = [_identifier copy];
+        casted->_trimmedIdentifier = [_trimmedIdentifier copy];
         casted->_emojiType = _emojiType;
     }
     

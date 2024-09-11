@@ -17,7 +17,7 @@ typedef NS_ENUM(NSUInteger, ESEmojiTokenType) {
     ESEmojiTokenFlagSequence,
     ESEmojiTokenTagSequence,
     ESEmojiTokenModifierSequence,
-    ESEmojiTokenZMJSequence
+    ESEmojiTokenZWJSequence
 };
 
 extern NSString * NSStringFromESEmojiTokenType(ESEmojiTokenType emojiType);
@@ -28,6 +28,7 @@ extern ESEmojiTokenType ESEmojiTokenTypeFromNSString(NSString *string);
 @property (assign, nonatomic, readonly) ESEmojiTokenType emojiType;
 @property (copy, nonatomic, readonly) NSString *string;
 @property (copy, nonatomic, readonly) NSString *identifier;
+@property (copy, nonatomic, readonly) NSString *trimmedIdentifier;
 + (NSArray<ESEmojiToken *> *)emojiTokensFromURL:(NSURL *)URL;
 + (NSDictionary<ESEmojiToken *, NSArray<ESEmojiToken *> *> *)emojiTokenReferencesFromEmojiTokens:(NSArray<ESEmojiToken *> *)emojiTokens;
 + (instancetype)new NS_UNAVAILABLE;
