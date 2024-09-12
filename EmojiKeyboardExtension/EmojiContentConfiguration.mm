@@ -15,17 +15,17 @@ __attribute__((objc_direct_members))
 
 @implementation EmojiContentConfiguration
 
-- (instancetype)initWithEmoji:(NSManagedObject *)emoji initialFrame:(CGRect)initialFrame {
+- (instancetype)initWithInitialFrame:(CGRect)initialFrame emojiHandler:(void (^)(void (^ _Nonnull)(NSManagedObject * _Nullable)))emojiHandler {
     if (self = [super init]) {
-        _emoji = [emoji retain];
         _initialFrame = initialFrame;
+        _emojiHandler = [emojiHandler copy];
     }
     
     return self;
 }
 
 - (void)dealloc {
-    [_emoji release];
+    [_emojiHandler release];
     [super dealloc];
 }
 
@@ -34,7 +34,7 @@ __attribute__((objc_direct_members))
         return YES;
     } else {
         auto casted = static_cast<EmojiContentConfiguration *>(other);
-        return [_emoji isEqual:casted->_emoji];
+        return [_emojiHandler isEqual:casted->_emojiHandler];
     }
 }
 
@@ -43,7 +43,7 @@ __attribute__((objc_direct_members))
     
     if (copy) {
         auto casted = static_cast<EmojiContentConfiguration *>(copy);
-        casted->_emoji = [_emoji retain];
+        casted->_emojiHandler = [_emojiHandler copy];
         casted->_initialFrame = _initialFrame;
     }
     

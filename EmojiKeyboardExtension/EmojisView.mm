@@ -97,8 +97,11 @@ __attribute__((objc_direct_members))
     __weak auto weakSelf = self;
     
     UICollectionViewCellRegistration *cellRegistration = [UICollectionViewCellRegistration registrationWithCellClass:UICollectionViewCell.class configurationHandler:^(__kindof UICollectionViewCell * _Nonnull cell, NSIndexPath * _Nonnull indexPath, NSManagedObjectID * _Nonnull managedObjectID) {
-        NSManagedObject * _Nullable managedObject = [weakSelf.viewModel managedObjectAtIndexPath:indexPath];
-        EmojiContentConfiguration *contentConfiguration = [[EmojiContentConfiguration alloc] initWithEmoji:managedObject initialFrame:cell.bounds];
+        EmojiContentConfiguration *contentConfiguration = [[EmojiContentConfiguration alloc] initWithInitialFrame:cell.bounds emojiHandler:^(void (^ _Nonnull completionHandler)(NSManagedObject * _Nullable)) {
+            [weakSelf.viewModel managedObjectAtIndexPath:indexPath completionHandler:^(NSManagedObject * _Nullable managedObject) {
+                completionHandler(managedObject);
+            }];
+        }];
         cell.contentConfiguration = contentConfiguration;
         [contentConfiguration release];
     }];
@@ -124,12 +127,6 @@ __attribute__((objc_direct_members))
     
     EmojisViewModel *viewModel = self.viewModel;
     
-    NSString *identifier;
-    NSString *string = [viewModel main_emojiStringAtIndexPath:indexPath identifierOut:&identifier];
-    
-    NSArray<NSString *> *childIdentifiers;
-    NSArray<NSString *> *childEmojiStrings = [viewModel main_childEmojiStringsAtIndexPath:indexPath identifiersOut:&childIdentifiers];
-    
     __weak auto weakSelf = self;
     
     UIContextMenuConfiguration *contextMenuConfiguration = [UIContextMenuConfiguration configurationWithIdentifier:nil
@@ -137,35 +134,43 @@ __attribute__((objc_direct_members))
         return nil;
     }
                                                                                                     actionProvider:^UIMenu * _Nullable(NSArray<UIMenuElement *> * _Nonnull suggestedActions) {
-        UIAction *action = [UIAction actionWithTitle:string image:nil identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-            [weakSelf.keyInput insertText:string];
-        }];
-        
-        action.subtitle = identifier;
-        
-        //
-        
-        NSMutableArray<UIMenuElement *> *childActions = [[NSMutableArray alloc] initWithCapacity:childEmojiStrings.count];
-        
-        [childEmojiStrings enumerateObjectsUsingBlock:^(NSString * _Nonnull string, NSUInteger idx, BOOL * _Nonnull stop) {
-            NSString *identifier = childIdentifiers[idx];
-            
-            UIAction *action = [UIAction actionWithTitle:string image:nil identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
-                [weakSelf.keyInput insertText:string];
+        UIDeferredMenuElement *element = [UIDeferredMenuElement elementWithProvider:^(void (^ _Nonnull completion)(NSArray<UIMenuElement *> * _Nonnull)) {
+            [viewModel emojiInfoAtIndexPath:indexPath completionHandler:^(NSString * _Nullable emojiString, NSString * _Nullable emojiIdentifier, NSArray<NSString *> * _Nullable childEmojiStrings, NSArray<NSString *> * _Nullable childEmojiIdentifiers) {
+                NSMutableArray<UIMenuElement *> *results = [[NSMutableArray alloc] initWithCapacity:childEmojiStrings.count + 1];
+                
+                //
+                
+                UIAction *action = [UIAction actionWithTitle:emojiString image:nil identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+                    [weakSelf.keyInput insertText:emojiString];
+                }];
+                
+                action.subtitle = emojiIdentifier;
+                [results addObject:action];
+                
+                //
+                
+                [childEmojiStrings enumerateObjectsUsingBlock:^(NSString * _Nonnull childEmojiString, NSUInteger idx, BOOL * _Nonnull stop) {
+                    NSString *childEmojiIdentifier = childEmojiIdentifiers[idx];
+                    
+                    UIAction *action = [UIAction actionWithTitle:childEmojiString image:nil identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
+                        [weakSelf.keyInput insertText:childEmojiString];
+                    }];
+                    
+                    action.subtitle = childEmojiIdentifier;
+                    
+                    [results addObject:action];
+                }];
+                
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    completion(results);
+                });
+                
+                [results release];
             }];
-            
-            action.subtitle = identifier;
-            
-            [childActions addObject:action];
         }];
         
-        UIMenu *childrenMenu = [UIMenu menuWithTitle:@"" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:childActions];
-        [childActions release];
         
-        UIMenu *menu = [UIMenu menuWithChildren:@[
-            action,
-            childrenMenu
-        ]];
+        UIMenu *menu = [UIMenu menuWithChildren:@[element]];
         
         return menu;
     }];

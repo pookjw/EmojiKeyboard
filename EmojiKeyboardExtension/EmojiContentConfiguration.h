@@ -12,10 +12,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 __attribute__((objc_direct_members))
 @interface EmojiContentConfiguration : NSObject <UIContentConfiguration>
-@property (retain, nonatomic, readonly, nullable) NSManagedObject *emoji;
+@property (copy, nonatomic, readonly) void (^emojiHandler)(void (^completionHandler)(NSManagedObject * _Nullable emoji));
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)init NS_UNAVAILABLE;
-- (instancetype)initWithEmoji:(NSManagedObject * _Nullable)emoji initialFrame:(CGRect)initialFrame;
+- (instancetype)initWithInitialFrame:(CGRect)initialFrame emojiHandler:(void (^)(void (^completionHandler)(NSManagedObject * _Nullable emoji)))emojiHandler;
 @end
 
 NS_ASSUME_NONNULL_END

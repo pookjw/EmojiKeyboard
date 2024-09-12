@@ -14,7 +14,6 @@ __attribute__((objc_direct_members))
 @interface EmojisViewModel () <NSFetchedResultsControllerDelegate>
 @property (retain, nonatomic, readonly) UICollectionViewDiffableDataSource<NSString *, NSManagedObjectID *> *dataSource;
 @property (retain, nonatomic, nullable) NSManagedObjectContext *managedObjectContext;
-@property (retain, nonatomic, nullable) NSManagedObjectContext *mainManagedObjectContext;
 @property (retain, nonatomic, nullable) NSFetchedResultsController<NSManagedObject *> *fetchedResultsController;
 @end
 
@@ -31,7 +30,6 @@ __attribute__((objc_direct_members))
 - (void)dealloc {
     [_dataSource release];
     [_managedObjectContext release];
-    [_mainManagedObjectContext release];
     [_fetchedResultsController release];
     [super dealloc];
 }
@@ -72,9 +70,6 @@ __attribute__((objc_direct_members))
         NSManagedObjectContext *managedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
         managedObjectContext.persistentStoreCoordinator = persistentStoreCoordinator;
         
-        NSManagedObjectContext *mainManagedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
-        mainManagedObjectContext.parentContext = managedObjectContext;
-        
         NSFetchRequest<NSManagedObject *> *fetchRequest = [[NSFetchRequest alloc] initWithEntityName:@"Emoji"];
         fetchRequest.sortDescriptors = @[];
         fetchRequest.predicate = [NSPredicate predicateWithFormat:@"%K == NULL" argumentArray:@[@"parentEmoji"]];
@@ -84,8 +79,6 @@ __attribute__((objc_direct_members))
         fetchedResultsController.delegate = self;
         
         self.managedObjectContext = managedObjectContext;
-        self.mainManagedObjectContext = mainManagedObjectContext;
-        [mainManagedObjectContext release];
         self.fetchedResultsController = fetchedResultsController;
         
         [managedObjectContext performBlock:^{
@@ -101,45 +94,44 @@ __attribute__((objc_direct_members))
     [storeDescription release];
 }
 
-- (NSString *)main_emojiStringAtIndexPath:(NSIndexPath *)indexPath identifierOut:(NSString * _Nonnull *)identifierOut {
-    NSManagedObjectID *managedObjectID = [_fetchedResultsController objectAtIndexPath:indexPath].objectID;
-    NSManagedObject *managedObject = [_mainManagedObjectContext objectWithID:managedObjectID];
-    NSString *string = [managedObject valueForKey:@"string"];
-    NSString *identifier = [managedObject valueForKey:@"identifier"];
-    
-    if (identifierOut != nullptr) {
-        *identifierOut = identifier;
-    }
-    
-    return string;
-}
-
-- (NSArray<NSString *> *)main_childEmojiStringsAtIndexPath:(NSIndexPath *)indexPath identifiersOut:(NSArray<NSString *> * _Nonnull *)identifiersOut {
-    NSManagedObjectID *managedObjectID = [_fetchedResultsController objectAtIndexPath:indexPath].objectID;
-    NSManagedObject *managedObject = [_mainManagedObjectContext objectWithID:managedObjectID];
-    NSSet<NSManagedObject *> *childEmojis = [managedObject valueForKey:@"childEmojis"];
-    
-    NSMutableArray<NSString *> *emojiStrings = [[NSMutableArray alloc] initWithCapacity:childEmojis.count];
-    NSMutableArray<NSString *> *identifiers = [[NSMutableArray alloc] initWithCapacity:childEmojis.count];
-    
-    for (NSManagedObject *childEmoji in childEmojis) {
-        NSString *string = [childEmoji valueForKey:@"string"];
-        NSString *identifier = [childEmoji valueForKey:@"identifier"];
-        [emojiStrings addObject:string];
-        [identifiers addObject:identifier];
-    }
-    
-    if (identifiersOut != nullptr) {
-        *identifiersOut = [identifiers autorelease];
+- (void)managedObjectAtIndexPath:(NSIndexPath *)indexPath completionHandler:(void (^)(NSManagedObject * _Nullable))completionHandler {
+    if (auto managedObjectContext = _managedObjectContext) {
+        [managedObjectContext performBlock:^{
+            completionHandler([_fetchedResultsController objectAtIndexPath:indexPath]);
+        }];
     } else {
-        [identifiers release];
+        completionHandler(nil);
     }
-    
-    return [emojiStrings autorelease];
 }
 
-- (NSManagedObject *)managedObjectAtIndexPath:(NSIndexPath *)indexPath {
-    return [_fetchedResultsController objectAtIndexPath:indexPath];
+- (void)emojiInfoAtIndexPath:(NSIndexPath *)indexPath completionHandler:(void (^)(NSString * _Nullable, NSString * _Nullable, NSArray<NSString *> * _Nullable, NSArray<NSString *> * _Nullable))completionHandler {
+    if (auto managedObjectContext = _managedObjectContext) {
+        [managedObjectContext performBlock:^{
+            NSManagedObject *emoji = [_fetchedResultsController objectAtIndexPath:indexPath];
+            if (emoji == nil) {
+                completionHandler(nil, nil, nil, nil);
+                return;
+            }
+            
+            NSString *string = [emoji valueForKey:@"string"];
+            NSString *identifier = [emoji valueForKey:@"identifier"];
+            
+            NSSet<NSManagedObject *> *childEmojis = [emoji valueForKey:@"childEmojis"];
+            NSMutableArray<NSString *> *childEmojiStrings = [[NSMutableArray alloc] initWithCapacity:childEmojis.count];
+            NSMutableArray<NSString *> *childEmojiIdentifiers = [[NSMutableArray alloc] initWithCapacity:childEmojis.count];
+            
+            for (NSManagedObject *childEmoji in childEmojis) {
+                NSString *string = [childEmoji valueForKey:@"string"];
+                NSString *identifier = [childEmoji valueForKey:@"identifier"];
+                [childEmojiStrings addObject:string];
+                [childEmojiIdentifiers addObject:identifier];
+            }
+            
+            completionHandler(string, identifier, [childEmojiStrings autorelease], [childEmojiIdentifiers autorelease]);
+        }];
+    } else {
+        completionHandler(nil, nil, nil, nil);
+    }
 }
 
 - (void)controller:(NSFetchedResultsController *)controller didChangeContentWithSnapshot:(NSDiffableDataSourceSnapshot<NSString *,NSManagedObjectID *> *)snapshot {

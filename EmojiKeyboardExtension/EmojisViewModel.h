@@ -16,9 +16,8 @@ __attribute__((objc_direct_members))
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithDataSource:(UICollectionViewDiffableDataSource<NSString *, NSManagedObjectID *> *)dataSource;
 - (void)loadDataSourceWithCompletionHandler:(void (^)(NSError * _Nullable error))completionHandler;
-- (NSManagedObject *)managedObjectAtIndexPath:(NSIndexPath *)indexPath;
-- (NSString *)main_emojiStringAtIndexPath:(NSIndexPath *)indexPath identifierOut:(NSString * _Nonnull __autoreleasing * _Nullable)identifierOut;
-- (NSArray<NSString *> *)main_childEmojiStringsAtIndexPath:(NSIndexPath *)indexPath identifiersOut:(NSArray<NSString *> * _Nonnull __autoreleasing * _Nullable)identifiersOut;
+- (void)managedObjectAtIndexPath:(NSIndexPath *)indexPath completionHandler:(void (^)(NSManagedObject * _Nullable managedObject))completionHandler;
+- (void)emojiInfoAtIndexPath:(NSIndexPath *)indexPath completionHandler:(void (^)(NSString * _Nullable emojiString, NSString * _Nullable emojiIdentifier, NSArray<NSString *> * _Nullable childEmojiStrings, NSArray<NSString *> * _Nullable childEmojiIdentifiers))completionHandler;
 @end
 
 NS_ASSUME_NONNULL_END
